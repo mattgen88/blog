@@ -1,15 +1,15 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
-	"database/sql"
 
 	"github.com/gorilla/mux"
 )
 
 type handler struct {
-	r *mux.Router
+	r  *mux.Router
 	db *sql.DB
 }
 
@@ -24,5 +24,3 @@ func (h *handler) CategoryHandler(http.ResponseWriter, *http.Request) {
 func (h *handler) ArticleHandler(http.ResponseWriter, *http.Request) {
 	fmt.Println("Article")
 }
-
-
