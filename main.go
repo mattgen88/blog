@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/howeyc/gopass"
@@ -22,9 +23,24 @@ const (
 		CategoryId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name Text NOT NULL
 	);`
-	rolesTableCreate = `DROP TABLE IF EXISTS Roles; CREATE TABLE Roles (
-		RoleId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	categoryTableInsert = `INSERT INTO Category (
+		"Name"
+	) VALUES (
+		"Test"
+	);`
+	roleTableCreate = `DROP TABLE IF EXISTS Role; CREATE TABLE Role (
+		RoleID Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name TEXT NOT NULL
+	);`
+	roleTableInsert = `INSERT INTO Role (
+		"Name"
+	) VALUES (
+		"admin"
+	);
+	INSERT INTO Role (
+		"Name"
+	) VALUES (
+		"user"
 	);`
 	userTableCreate = `DROP TABLE IF EXISTS Users; CREATE TABLE Users (
 		UserID Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -33,7 +49,7 @@ const (
 		Created Datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		RealName Text,
 		Email Text,
-		Role Integer NOT NULL DEFAULT 0 REFERENCES Roles(RoleID)
+		Role Integer NULL REFERENCES Role(RoleID)
 	);`
 	postTableCreate = `DROP TABLE IF EXISTS Posts; CREATE TABLE Posts (
 		PostId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -42,7 +58,22 @@ const (
 		Body Text NOT NULL,
 		Date Datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		Slug Text NOT NULL,
-		Category Integer NOT NULL DEFAULT 0 REFERENCES Category(CategoryId)
+		Category Integer NOT NULL DEFAULT 1 REFERENCES Category(CategoryId)
+	);`
+	postTableInsert = `INSERT INTO Posts (
+		Title,
+		Author,
+		Body,
+		Date,
+		Slug
+		Category
+	) VALUES (
+		"Test",
+		?,
+		"This is a test",
+		CURRENT_TIMESTAMP,
+		"test",
+		1
 	);`
 )
 
@@ -113,51 +144,86 @@ instructions and you will have working blog.`)
 
 	_, err := db.Exec(categoryTableCreate)
 	if err != nil {
-		fmt.Println("Could not create category table")
 		fmt.Println(err)
+		fmt.Println("Could not create category table")
 		return
 	}
 
-	_, err = db.Exec(rolesTableCreate)
+	_, err = db.Exec(categoryTableInsert)
 	if err != nil {
-		fmt.Println("Could not create roles table")
 		fmt.Println(err)
+		fmt.Println("Could not populate category table")
+		return
+	}
+
+	_, err = db.Exec(roleTableCreate)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not create roles table")
+		return
+	}
+
+	_, err = db.Exec(roleTableInsert)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not populate roles table")
 		return
 	}
 
 	_, err = db.Exec(userTableCreate)
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("Could not create user table")
-		fmt.Println(err)
-		return
-	}
-
-	_, err = db.Exec(postTableCreate)
-	if err != nil {
-		fmt.Println("Could not create post table")
-		fmt.Println(err)
 		return
 	}
 
 	fmt.Print("What is the username you would like to use? ")
 	username, err := reader.ReadString('\n')
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("Something has gone wrong. Exiting")
 		return
 	}
+	username = strings.TrimSpace(username)
 
 	fmt.Print("What is the password for your user? ")
 
 	password, err := gopass.GetPasswdMasked()
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("Something has gone wrong. Exiting")
 		return
 	}
 
 	u := models.NewSqlUser(username, db)
-	u.SetPassword(string(password))
-	u.Save()
-	fmt.Println(u)
+	u.SetPassword(strings.TrimSpace(string(password)))
+	err = u.Save()
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not save user")
+		return
+	}
+	u = models.NewSqlUser(username, db)
+	err = u.Populate()
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not populate database")
+		return
+	}
+
+
+	_, err = db.Exec(postTableCreate)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not create post table")
+		return
+	}
+	_, err = db.Exec(postTableInsert, u.Id)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("Could not create post table")
+		return
+	}
 
 	fmt.Println("Done.")
 

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -13,6 +14,7 @@ type User interface {
 	SetRealName(string)
 	Exists() bool
 	Authenticate(string) bool
+	IsAuthenticated() bool
 	HasRole(string)
 	Populate() error
 	Save()
@@ -21,11 +23,13 @@ type User interface {
 // SQL based User model
 type SqlUser struct {
 	db            *sql.DB
-	id            int
-	username      string
+	Id            int
+	Username      string
 	pwhash        string
-	realname      string
-	role          int
+	Realname      string
+	Role          string
+	Created       time.Time
+	Email         string
 	authenticated bool
 	dirty         bool
 	populated     bool
@@ -35,7 +39,7 @@ type SqlUser struct {
 func NewSqlUser(username string, db *sql.DB) *SqlUser {
 	u := &SqlUser{
 		db:       db,
-		username: username,
+		Username: username,
 	}
 	if u.Exists() {
 		u.Populate()
@@ -55,13 +59,14 @@ func (u *SqlUser) SetPassword(pw string) {
 
 // Set the real name of the user
 func (u *SqlUser) SetRealName(rn string) {
+	u.Realname = rn
 	u.dirty = true
 }
 
 // Check if the user exists
 func (u *SqlUser) Exists() bool {
 	var count int
-	err := u.db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.username).Scan(&count)
+	err := u.db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -82,8 +87,19 @@ func (u *SqlUser) Authenticate(pw string) bool {
 	return err == nil
 }
 
+// Check if user is authenticated
+func (u *SqlUser) IsAuthenticated() bool {
+	return u.authenticated
+}
+
+// Set the user role
+func (u *SqlUser) SetRole(role string) {
+	u.Role = role
+}
+
 // Check if user has a certain role
-func (u *SqlUser) HasRole(role string) {
+func (u *SqlUser) HasRole(role string) bool {
+	return u.Role == role
 }
 
 // Fetch data and populate struct
@@ -97,11 +113,56 @@ func (u *SqlUser) Populate() error {
 		return errors.New("Model dirty")
 	}
 	// Fetch data and populate
+	err := u.db.QueryRow(`SELECT UserId
+	FROM Users
+	WHERE Username = "mgeneral"`, u.Username).Scan(u.Id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println(err)
+			return errors.New("User does not exist")
+		}
+		return errors.New("Unknown error occurred")
+	}
 	u.populated = true
 	return nil
 }
 
 // Save struct back to database
-func (u *SqlUser) Save() {
+func (u *SqlUser) Save() error{
+	var result sql.Result
+	var err error
+	if u.populated {
+		// update
+		result, err = u.db.Exec(`UPDATE Users
+		SET
+			Hash = ?,
+			RealName = ?,
+			Email = ?,
+			Role = (SELECT RoleID FROM Role where Name = ?)
+		WHERE UserId = ?`, u.pwhash, u.Realname, u.Email, u.Role, u.Id)
+	} else {
+		created := time.Now().Format("2016-04-20 20:34:30")
+		result, err = u.db.Exec(`INSERT INTO Users (
+			Username,
+			Hash,
+			Created,
+			RealName,
+			Email,
+			Role
+		) VALUES (?, ?, ?, ?, ?, (SELECT RoleID FROM Role WHERE Name = ?))`, u.Username, u.pwhash, created, u.Realname, u.Email, u.Role)
+	}
+	if err != nil {
+		// Some kind of failure
+		fmt.Println(err)
+		return errors.New("Unable to save user")
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil || count != 1 {
+		fmt.Println(err)
+		return errors.New("Unable to verify save")
+	}
+
 	u.dirty = false
+	return nil
 }
