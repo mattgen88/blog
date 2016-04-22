@@ -8,19 +8,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type handler struct {
+// Handler provides various http handlers
+type Handler struct {
 	r  *mux.Router
 	db *sql.DB
 }
 
-func New(r *mux.Router, db *sql.DB) *handler {
-	return &handler{r, db}
+// New returns a configured handler struct
+func New(r *mux.Router, db *sql.DB) *Handler {
+	return &Handler{r, db}
 }
 
-func (h *handler) CategoryHandler(http.ResponseWriter, *http.Request) {
+// CategoryHandler handles requests for categories
+func (h *Handler) CategoryHandler(http.ResponseWriter, *http.Request) {
 	fmt.Println("Category")
 }
 
-func (h *handler) ArticleHandler(http.ResponseWriter, *http.Request) {
+// ArticleHandler handles requests for articles
+func (h *Handler) ArticleHandler(http.ResponseWriter, *http.Request) {
 	fmt.Println("Article")
+}
+
+// UserHandler handles requests for users
+func (h *Handler) UserHandler(http.ResponseWriter, *http.Request) {
+	fmt.Println("User")
 }

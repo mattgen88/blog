@@ -9,9 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// User is a user in the system
 type User interface {
 	SetPassword(string)
 	SetRealName(string)
+	SetEmail(string)
 	Exists() bool
 	Authenticate(string) bool
 	IsAuthenticated() bool
@@ -20,10 +22,10 @@ type User interface {
 	Save()
 }
 
-// SQL based User model
-type SqlUser struct {
+// SQLUser is a SQL based User model
+type SQLUser struct {
 	db            *sql.DB
-	Id            int
+	ID            int
 	Username      string
 	pwhash        string
 	Realname      string
@@ -35,9 +37,9 @@ type SqlUser struct {
 	populated     bool
 }
 
-// Create a User model
-func NewSqlUser(username string, db *sql.DB) *SqlUser {
-	u := &SqlUser{
+// NewSQLUser Creates a User model
+func NewSQLUser(username string, db *sql.DB) *SQLUser {
+	u := &SQLUser{
 		db:       db,
 		Username: username,
 	}
@@ -47,8 +49,8 @@ func NewSqlUser(username string, db *sql.DB) *SqlUser {
 	return u
 }
 
-// Set the password of the user
-func (u *SqlUser) SetPassword(pw string) {
+// SetPassword sets the password of the user
+func (u *SQLUser) SetPassword(pw string) {
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
 		fmt.Println("An error occurred encrypting")
@@ -57,29 +59,33 @@ func (u *SqlUser) SetPassword(pw string) {
 	u.dirty = true
 }
 
-// Set the real name of the user
-func (u *SqlUser) SetRealName(rn string) {
+// SetRealName sets the real name of the user
+func (u *SQLUser) SetRealName(rn string) {
 	u.Realname = rn
 	u.dirty = true
 }
 
-// Check if the user exists
-func (u *SqlUser) Exists() bool {
+// SetEmail sets the email of the user
+func (u *SQLUser) SetEmail(email string) {
+	u.Email = email
+	u.dirty = true
+}
+
+// Exists Checks if the user exists
+func (u *SQLUser) Exists() bool {
 	var count int
 	err := u.db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false
-		} else {
-			fmt.Println("Something went wrong")
 		}
 	}
 	return true
 }
 
-// Authenticate the user
-func (u *SqlUser) Authenticate(pw string) bool {
+// Authenticate authenticates the user
+func (u *SQLUser) Authenticate(pw string) bool {
 	if !u.populated {
 		return false
 	}
@@ -87,23 +93,23 @@ func (u *SqlUser) Authenticate(pw string) bool {
 	return err == nil
 }
 
-// Check if user is authenticated
-func (u *SqlUser) IsAuthenticated() bool {
+// IsAuthenticated checks if user is authenticated
+func (u *SQLUser) IsAuthenticated() bool {
 	return u.authenticated
 }
 
-// Set the user role
-func (u *SqlUser) SetRole(role string) {
+// SetRole sets the user role
+func (u *SQLUser) SetRole(role string) {
 	u.Role = role
 }
 
-// Check if user has a certain role
-func (u *SqlUser) HasRole(role string) bool {
+// HasRole checks if user has a certain role
+func (u *SQLUser) HasRole(role string) bool {
 	return u.Role == role
 }
 
-// Fetch data and populate struct
-func (u *SqlUser) Populate() error {
+// Populate Fetches data and populates struct
+func (u *SQLUser) Populate() error {
 	if u.populated {
 		// Don't repopulate a populated model
 		return errors.New("Model already populated")
@@ -115,10 +121,9 @@ func (u *SqlUser) Populate() error {
 	// Fetch data and populate
 	err := u.db.QueryRow(`SELECT UserId
 	FROM Users
-	WHERE Username = "mgeneral"`, u.Username).Scan(u.Id)
+	WHERE Username = "mgeneral"`, u.Username).Scan(u.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println(err)
 			return errors.New("User does not exist")
 		}
 		return errors.New("Unknown error occurred")
@@ -127,8 +132,8 @@ func (u *SqlUser) Populate() error {
 	return nil
 }
 
-// Save struct back to database
-func (u *SqlUser) Save() error{
+// Save saves struct back to database
+func (u *SQLUser) Save() error{
 	var result sql.Result
 	var err error
 	if u.populated {
@@ -139,9 +144,8 @@ func (u *SqlUser) Save() error{
 			RealName = ?,
 			Email = ?,
 			Role = (SELECT RoleID FROM Role where Name = ?)
-		WHERE UserId = ?`, u.pwhash, u.Realname, u.Email, u.Role, u.Id)
+		WHERE UserId = ?`, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
 	} else {
-		created := time.Now().Format("2016-04-20 20:34:30")
 		result, err = u.db.Exec(`INSERT INTO Users (
 			Username,
 			Hash,
@@ -149,17 +153,15 @@ func (u *SqlUser) Save() error{
 			RealName,
 			Email,
 			Role
-		) VALUES (?, ?, ?, ?, ?, (SELECT RoleID FROM Role WHERE Name = ?))`, u.Username, u.pwhash, created, u.Realname, u.Email, u.Role)
+		) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, (SELECT RoleID FROM Role WHERE Name = ?))`, u.Username, u.pwhash, u.Realname, u.Email, u.Role)
 	}
 	if err != nil {
 		// Some kind of failure
-		fmt.Println(err)
 		return errors.New("Unable to save user")
 	}
 
 	count, err := result.RowsAffected()
 	if err != nil || count != 1 {
-		fmt.Println(err)
 		return errors.New("Unable to verify save")
 	}
 

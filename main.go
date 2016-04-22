@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	categoryTableCreate = `DROP TABLE IF EXISTS Category; CREATE TABLE Category (
+	tableClean = `DROP TABLE IF EXISTS Posts; DROP TABLE IF EXISTS Category; DROP TABLE IF EXISTS Users; DROP TABLE IF EXISTS Role;`
+	categoryTableCreate = `CREATE TABLE Category (
 		CategoryId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name Text NOT NULL
 	);`
@@ -28,7 +29,7 @@ const (
 	) VALUES (
 		"Test"
 	);`
-	roleTableCreate = `DROP TABLE IF EXISTS Role; CREATE TABLE Role (
+	roleTableCreate = `CREATE TABLE Role (
 		RoleID Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name TEXT NOT NULL
 	);`
@@ -42,8 +43,8 @@ const (
 	) VALUES (
 		"user"
 	);`
-	userTableCreate = `DROP TABLE IF EXISTS Users; CREATE TABLE Users (
-		UserID Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	userTableCreate = `CREATE TABLE Users (
+		UserId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Username Text NOT NULL,
 		Hash TEXT NOT NULL,
 		Created Datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -51,7 +52,7 @@ const (
 		Email Text,
 		Role Integer NULL REFERENCES Role(RoleID)
 	);`
-	postTableCreate = `DROP TABLE IF EXISTS Posts; CREATE TABLE Posts (
+	postTableCreate = `CREATE TABLE Posts (
 		PostId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Title Text NOT NULL,
 		Author Integer NOT NULL REFERENCES Users(UserId),
@@ -60,27 +61,14 @@ const (
 		Slug Text NOT NULL,
 		Category Integer NOT NULL DEFAULT 1 REFERENCES Category(CategoryId)
 	);`
-	postTableInsert = `INSERT INTO Posts (
-		Title,
-		Author,
-		Body,
-		Date,
-		Slug
-		Category
-	) VALUES (
-		"Test",
-		?,
-		"This is a test",
-		CURRENT_TIMESTAMP,
-		"test",
-		1
-	);`
+	postTableInsert = `INSERT INTO Posts (Title, Author, Body, Date, Slug, Category) VALUES ("Test", 1, "This is a test", CURRENT_TIMESTAMP, "test", 1);`
 )
 
 func main() {
 	// Set configuration file information
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/blog/")
+	viper.AddConfigPath(".")
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -88,6 +76,7 @@ func main() {
 	}
 
 	// Gather configuration
+	viper.BindEnv("dbfile")
 	dbFile := viper.GetString("dbfile")
 
 	viper.SetDefault("port", 8088)
@@ -126,6 +115,7 @@ func main() {
 
 	r.HandleFunc("/articles/{category}", h.CategoryHandler)
 	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}", h.ArticleHandler)
+	r.HandleFunc("/users/", h.UserHandler)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
 }
@@ -142,38 +132,38 @@ instructions and you will have working blog.`)
 
 	fmt.Println("Initializing tables...")
 
-	_, err := db.Exec(categoryTableCreate)
+	_, err := db.Exec(tableClean)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not create category table")
+		return
+	}
+	_, err = db.Exec(categoryTableCreate)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
 	_, err = db.Exec(categoryTableInsert)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not populate category table")
 		return
 	}
 
 	_, err = db.Exec(roleTableCreate)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not create roles table")
 		return
 	}
 
 	_, err = db.Exec(roleTableInsert)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not populate roles table")
 		return
 	}
 
 	_, err = db.Exec(userTableCreate)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not create user table")
 		return
 	}
 
@@ -181,47 +171,68 @@ instructions and you will have working blog.`)
 	username, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Something has gone wrong. Exiting")
 		return
 	}
 	username = strings.TrimSpace(username)
+
+	fmt.Print("What is the real name you would like to use? ")
+	realname, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	realname = strings.TrimSpace(realname)
+
+	fmt.Print("What is the email you would like to use? ")
+	email, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	email = strings.TrimSpace(email)
 
 	fmt.Print("What is the password for your user? ")
 
 	password, err := gopass.GetPasswdMasked()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Something has gone wrong. Exiting")
 		return
 	}
 
-	u := models.NewSqlUser(username, db)
+	u := models.NewSQLUser(email, db)
 	u.SetPassword(strings.TrimSpace(string(password)))
+	u.SetRealName(realname)
+	u.SetEmail(email)
 	err = u.Save()
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not save user")
-		return
-	}
-	u = models.NewSqlUser(username, db)
-	err = u.Populate()
-	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Could not populate database")
 		return
 	}
 
+	rows, err := db.Query("SELECT UserId FROM Users WHERE email=?", email)
+	if err !=nil {
+		fmt.Println(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			fmt.Println(err)
+		}
+	}
+	if err := rows.Err(); err !=nil {
+		fmt.Println(err)
+	}
 
 	_, err = db.Exec(postTableCreate)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not create post table")
 		return
 	}
-	_, err = db.Exec(postTableInsert, u.Id)
+	_, err = db.Exec(postTableInsert, u.ID)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println("Could not create post table")
 		return
 	}
 
