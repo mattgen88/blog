@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	Gorilla "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/howeyc/gopass"
 	_ "github.com/mattn/go-sqlite3"
@@ -19,7 +20,7 @@ import (
 )
 
 const (
-	tableClean = `DROP TABLE IF EXISTS Posts; DROP TABLE IF EXISTS Category; DROP TABLE IF EXISTS Users; DROP TABLE IF EXISTS Role;`
+	tableClean          = `DROP TABLE IF EXISTS Posts; DROP TABLE IF EXISTS Category; DROP TABLE IF EXISTS Users; DROP TABLE IF EXISTS Role;`
 	categoryTableCreate = `CREATE TABLE Category (
 		CategoryId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name Text NOT NULL
@@ -113,11 +114,14 @@ func main() {
 
 	h := handlers.New(r, db)
 
+	r.HandleFunc("/", h.RootHandler)
+	r.HandleFunc("/articles", h.ArticleListHandler)
 	r.HandleFunc("/articles/{category}", h.CategoryHandler)
 	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}", h.ArticleHandler)
-	r.HandleFunc("/users/", h.UserHandler)
+	r.HandleFunc("/users/", h.UsersListHandler)
+	r.HandleFunc("/users/{id:[a-zA-Z]}", h.UserHandler)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), r))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), Gorilla.LoggingHandler(os.Stdout, r)))
 }
 
 // Called to initialize the database
@@ -211,7 +215,7 @@ instructions and you will have working blog.`)
 	}
 
 	rows, err := db.Query("SELECT UserId FROM Users WHERE email=?", email)
-	if err !=nil {
+	if err != nil {
 		fmt.Println(err)
 	}
 	defer rows.Close()
@@ -221,7 +225,7 @@ instructions and you will have working blog.`)
 			fmt.Println(err)
 		}
 	}
-	if err := rows.Err(); err !=nil {
+	if err := rows.Err(); err != nil {
 		fmt.Println(err)
 	}
 
