@@ -10,18 +10,18 @@ import (
 )
 
 // Handler provides various http handlers
-type Handler struct {
+type Handler struct { // {{{
 	r  *mux.Router
 	db *sql.DB
-}
+} // }}}
 
 // New returns a configured handler struct
-func New(r *mux.Router, db *sql.DB) *Handler {
+func New(r *mux.Router, db *sql.DB) *Handler { // {{{
 	return &Handler{r, db}
-}
+} // }}}
 
 // JSONify the resource
-func JSONify(root hal.Resource) []byte {
+func JSONify(root hal.Resource) []byte { // {{{
 
 	encoder := new(hal.Encoder)
 	bytes, err := encoder.ToJSON(root)
@@ -31,7 +31,7 @@ func JSONify(root hal.Resource) []byte {
 		return nil
 	}
 	return bytes
-}
+} // }}}
 
 // RootHandler handles requests for the root of the API
 func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) { // {{{
@@ -89,6 +89,7 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
+	root.Data()["request"] = mux.Vars(r)["category"]
 
 	w.Write(JSONify(root))
 }
@@ -162,6 +163,8 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
+	root.Data()["category"] = mux.Vars(r)["category"]
+	root.Data()["id"] = mux.Vars(r)["id"]
 
 	w.Write(JSONify(root))
 }
@@ -224,6 +227,24 @@ func (h *Handler) UserHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
+	root.Data()["username"] = mux.Vars(r)["id"]
+
+	w.Write(JSONify(root))
+}
+
+// ErrorHandler handles requests for users
+func (h *Handler) ErrorHandler(w http.ResponseWriter, r *http.Request) {
+	root := hal.NewResourceObject()
+
+	link := &hal.LinkObject{Href: r.URL.Path}
+
+	self := hal.NewSelfLinkRelation()
+	self.SetLink(link)
+
+	root.AddLink(self)
+	root.Data()["message"] = "Resource not found"
+
+	w.WriteHeader(http.StatusNotFound)
 
 	w.Write(JSONify(root))
 }

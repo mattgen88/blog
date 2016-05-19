@@ -114,16 +114,23 @@ func main() {
 	h := handlers.New(r, db)
 
 	r.HandleFunc("/", h.RootHandler).Name("root")
+
 	r.HandleFunc("/articles", h.ArticleListHandler)
 	r.HandleFunc("/articles/", h.ArticleListHandler).Name("article_list")
+
 	r.HandleFunc("/articles/{category}", h.CategoryHandler)
 	r.HandleFunc("/articles/{category}/", h.CategoryHandler).Name("category")
+
 	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}", h.ArticleHandler)
 	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}/", h.ArticleHandler).Name("article")
+
 	r.HandleFunc("/users", h.UsersListHandler)
 	r.HandleFunc("/users/", h.UsersListHandler).Name("users_list")
-	r.HandleFunc("/users/{id:[a-zA-Z]}", h.UserHandler)
-	r.HandleFunc("/users/{id:[a-zA-Z]}/", h.UserHandler).Name("user")
+
+	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}", h.UserHandler)
+	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}/", h.UserHandler).Name("user")
+
+	r.NotFoundHandler = http.HandlerFunc(h.ErrorHandler)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), Gorilla.LoggingHandler(os.Stdout, r)))
 }
