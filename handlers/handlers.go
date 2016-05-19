@@ -20,7 +20,7 @@ func New(r *mux.Router, db *sql.DB) *Handler {
 	return &Handler{r, db}
 }
 
-// JSON Middleware
+// JSONify the resource
 func JSONify(root hal.Resource) []byte {
 
 	encoder := new(hal.Encoder)
@@ -131,6 +131,40 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
+
+	rows, err := h.db.Query("SELECT Username from Users")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	defer rows.Close()
+
+	var embeddedUsers []hal.Resource
+
+	for rows.Next() {
+		var username string
+		if err := rows.Scan(&username); err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		href := "/users/" + username
+		selfLink, err := hal.NewLinkObject(href)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		self = hal.NewSelfLinkRelation()
+		self.SetLink(selfLink)
+
+		embeddedUser := hal.NewResourceObject()
+		embeddedUser.AddLink(self)
+		embeddedUser.Data()["name"] = username
+		embeddedUsers = append(embeddedUsers, embeddedUser)
+	}
+	users, _ := hal.NewResourceRelation("users")
+	users.SetResources(embeddedUsers)
+	root.AddResource(users)
 
 	w.Write(JSONify(root))
 }

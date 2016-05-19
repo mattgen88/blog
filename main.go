@@ -204,7 +204,7 @@ instructions and you will have working blog.`)
 		return
 	}
 
-	u := models.NewSQLUser(email, db)
+	u := models.NewSQLUser(username, db)
 	u.SetPassword(strings.TrimSpace(string(password)))
 	u.SetRealName(realname)
 	u.SetEmail(email)

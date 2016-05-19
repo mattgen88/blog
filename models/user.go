@@ -121,7 +121,7 @@ func (u *SQLUser) Populate() error {
 	// Fetch data and populate
 	err := u.db.QueryRow(`SELECT UserId
 	FROM Users
-	WHERE Username = "mgeneral"`, u.Username).Scan(u.ID)
+	WHERE Username = ?`, u.Username).Scan(u.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return errors.New("User does not exist")
@@ -133,7 +133,7 @@ func (u *SQLUser) Populate() error {
 }
 
 // Save saves struct back to database
-func (u *SQLUser) Save() error{
+func (u *SQLUser) Save() error {
 	var result sql.Result
 	var err error
 	if u.populated {
