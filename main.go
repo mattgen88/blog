@@ -48,7 +48,7 @@ const (
 		UserId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Username Text NOT NULL,
 		Hash TEXT NOT NULL,
-		Created Datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		Created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		RealName Text,
 		Email Text,
 		Role Integer NULL REFERENCES Role(RoleID)
@@ -58,7 +58,7 @@ const (
 		Title Text NOT NULL,
 		Author Integer NOT NULL REFERENCES Users(UserId),
 		Body Text NOT NULL,
-		Date Datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		Date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		Slug Text NOT NULL,
 		Category Integer NOT NULL DEFAULT 1 REFERENCES Category(CategoryId)
 	);`
@@ -90,7 +90,7 @@ func main() {
 	viper.BindEnv("initialize")
 	init := viper.GetBool("initialize")
 
-	db, err := sql.Open("sqlite3", dbFile)
+	db, err := sql.Open("sqlite3", dbFile+"?parseTime=True")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,16 +110,20 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.StrictSlash(true)
 
 	h := handlers.New(r, db)
 
-	r.HandleFunc("/", h.RootHandler)
+	r.HandleFunc("/", h.RootHandler).Name("root")
 	r.HandleFunc("/articles", h.ArticleListHandler)
+	r.HandleFunc("/articles/", h.ArticleListHandler).Name("article_list")
 	r.HandleFunc("/articles/{category}", h.CategoryHandler)
+	r.HandleFunc("/articles/{category}/", h.CategoryHandler).Name("category")
 	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}", h.ArticleHandler)
-	r.HandleFunc("/users/", h.UsersListHandler)
+	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}/", h.ArticleHandler).Name("article")
+	r.HandleFunc("/users", h.UsersListHandler)
+	r.HandleFunc("/users/", h.UsersListHandler).Name("users_list")
 	r.HandleFunc("/users/{id:[a-zA-Z]}", h.UserHandler)
+	r.HandleFunc("/users/{id:[a-zA-Z]}/", h.UserHandler).Name("user")
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), Gorilla.LoggingHandler(os.Stdout, r)))
 }

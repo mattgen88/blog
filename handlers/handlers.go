@@ -34,7 +34,7 @@ func JSONify(root hal.Resource) []byte {
 }
 
 // RootHandler handles requests for the root of the API
-func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) { // {{{
 	root := hal.NewResourceObject()
 
 	self := hal.NewSelfLinkRelation()
@@ -77,7 +77,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Write it out
 	w.Write(JSONify(root))
-}
+} // }}}
 
 // CategoryHandler handles requests for categories
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ArticleListHandler handles requests for articles
-func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) { // {{{
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -104,8 +104,53 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddLink(self)
 
+	rows, err := h.db.Query("SELECT PostId, Title, Body, Date, Slug, Category.Name, Users.Username from Posts JOIN Category on Category.CategoryId = Posts.Category JOIN Users on Users.UserId = Posts.Author")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	defer rows.Close()
+
+	var embeddedPosts []hal.Resource
+
+	for rows.Next() {
+		var (
+			postId   int
+			title    string
+			body     string
+			date     string
+			slug     string
+			category string
+			author   string
+		)
+		if err := rows.Scan(&postId, &title, &body, &date, &slug, &category, &author); err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		href := "/articles/" + slug
+		selfLink, err := hal.NewLinkObject(href)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		self = hal.NewSelfLinkRelation()
+		self.SetLink(selfLink)
+
+		embeddedPost := hal.NewResourceObject()
+		embeddedPost.AddLink(self)
+		embeddedPost.Data()["title"] = title
+		embeddedPost.Data()["author"] = author
+		embeddedPost.Data()["category"] = category
+		embeddedPost.Data()["date"] = date
+		embeddedPosts = append(embeddedPosts, embeddedPost)
+	}
+	posts, _ := hal.NewResourceRelation("posts")
+	posts.SetResources(embeddedPosts)
+	root.AddResource(posts)
+
 	w.Write(JSONify(root))
-}
+} // }}}
 
 // ArticleHandler handles requests for articles
 func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +167,7 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UsersListHandler handles requests for users
-func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) { // {{{
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -167,7 +212,7 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	root.AddResource(users)
 
 	w.Write(JSONify(root))
-}
+} // }}}
 
 // UserHandler handles requests for users
 func (h *Handler) UserHandler(w http.ResponseWriter, r *http.Request) {
