@@ -129,7 +129,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) { /
 			continue
 		}
 
-		href := "/articles/" + slug
+		href := "/articles/" + category + "/" + slug + "/"
 		selfLink, err := hal.NewLinkObject(href)
 		if err != nil {
 			fmt.Println(err)

@@ -20,6 +20,12 @@ type User interface {
 	HasRole(string)
 	Populate() error
 	Save()
+	GetRealname() string
+	GetRole() string
+	GetEmail() string
+	GetCreated() *time.Time
+	GetUsername() string
+	GetID() int
 }
 
 // SQLUser is a SQL based User model
@@ -30,7 +36,7 @@ type SQLUser struct {
 	pwhash        string
 	Realname      string
 	Role          string
-	Created       time.Time
+	Created       *time.Time
 	Email         string
 	authenticated bool
 	dirty         bool
@@ -47,6 +53,48 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 		u.Populate()
 	}
 	return u
+}
+
+func (u *SQLUser) GetRealname() string {
+	if u.populated {
+		return u.Realname
+	}
+	return ""
+}
+
+func (u *SQLUser) GetRole() string {
+	if u.populated {
+		return u.Role
+	}
+	return ""
+}
+
+func (u *SQLUser) GetEmail() string {
+	if u.populated {
+		return u.Email
+	}
+	return ""
+}
+
+func (u *SQLUser) GetCreated() *time.Time {
+	if u.populated {
+		return u.Created
+	}
+	return nil
+}
+
+func (u *SQLUser) GetUsername() string {
+	if u.populated {
+		return u.Username
+	}
+	return ""
+}
+
+func (u *SQLUser) GetID() int {
+	if u.populated {
+		return u.ID
+	}
+	return -1
 }
 
 // SetPassword sets the password of the user
@@ -110,6 +158,9 @@ func (u *SQLUser) HasRole(role string) bool {
 
 // Populate Fetches data and populates struct
 func (u *SQLUser) Populate() error {
+	if !u.Exists() {
+		return errors.New("Instance does not exist")
+	}
 	if u.populated {
 		// Don't repopulate a populated model
 		return errors.New("Model already populated")
@@ -119,13 +170,10 @@ func (u *SQLUser) Populate() error {
 		return errors.New("Model dirty")
 	}
 	// Fetch data and populate
-	err := u.db.QueryRow(`SELECT UserId
+	err := u.db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
 	FROM Users
-	WHERE Username = ?`, u.Username).Scan(u.ID)
+	WHERE Username = ?`, u.Username).Scan(u.ID, u.Created, u.Realname, u.Email, u.Role)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return errors.New("User does not exist")
-		}
 		return errors.New("Unknown error occurred")
 	}
 	u.populated = true
