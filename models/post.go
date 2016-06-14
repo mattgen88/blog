@@ -37,9 +37,11 @@ func NewSQLPost(slug string, db *sql.DB) *SQLPost {
 	p := &SQLPost{
 		db: db,
 	}
+
 	if p.Exists() {
 		p.Populate()
 	}
+
 	return p
 }
 
@@ -48,6 +50,7 @@ func (p *SQLPost) GetAuthor() *SQLUser {
 	if p.populated {
 		return p.Author
 	}
+
 	return nil
 }
 
@@ -56,6 +59,7 @@ func (p *SQLPost) GetTitle() string {
 	if p.populated {
 		return p.Title
 	}
+
 	return ""
 }
 
@@ -64,6 +68,7 @@ func (p *SQLPost) GetBody() string {
 	if p.populated {
 		return p.Body
 	}
+
 	return ""
 }
 
@@ -72,6 +77,7 @@ func (p *SQLPost) GetDate() *time.Time {
 	if p.populated {
 		return p.Date
 	}
+
 	return nil
 }
 
@@ -80,6 +86,7 @@ func (p *SQLPost) GetSlug() string {
 	if p.populated {
 		return p.Slug
 	}
+
 	return ""
 }
 
@@ -88,6 +95,7 @@ func (p *SQLPost) GetCategory() *SQLCategory {
 	if p.populated {
 		return p.Category
 	}
+
 	return nil
 }
 
@@ -109,9 +117,11 @@ func (p *SQLPost) Populate() error {
 	if !p.Exists() {
 		return errors.New("instance does not exist")
 	}
+
 	if p.populated {
 		return errors.New("Model already populated")
 	}
+
 	if p.dirty {
 		return errors.New("Model dirty")
 	}
@@ -126,6 +136,7 @@ func (p *SQLPost) Populate() error {
 	JOIN Category ON Posts.Category = Category.CategoryID
 	JOIN Users ON Posts.Author = Users.UserId
 	WHERE Slug = ?`).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
+
 	if err != nil {
 		return errors.New("Unknown error occurred")
 	}

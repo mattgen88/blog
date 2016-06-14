@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mattgen88/blog/models"
 	"github.com/pmoule/go2hal/hal"
 )
 
 // CategoryHandler handles requests for categories
+// @TODO: return list of posts in that category and embed them
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
@@ -18,7 +20,12 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
-	root.Data()["request"] = mux.Vars(r)["category"]
+
+	c := mux.Vars(r)["category"]
+
+	category := models.NewSQLCategory(c, h.db)
+
+	root.Data()["id"] = category.GetID()
 
 	w.Write(JSONify(root))
 }
@@ -34,11 +41,12 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddLink(self)
 
+	// @TODO: Move this off to the model...
 	rows, err := h.db.Query(`SELECT PostId, Title, Body, Date, Slug, Category.Name, Users.Username
 		FROM Posts
 		JOIN Category on Category.CategoryId = Posts.Category
 		JOIN Users on Users.UserId = Posts.Author`)
-	
+
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -57,6 +65,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 			category string
 			author   string
 		)
+
 		if err := rows.Scan(&postId, &title, &body, &date, &slug, &category, &author); err != nil {
 			fmt.Println(err)
 			continue
@@ -64,6 +73,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 		href := "/articles/" + category + "/" + slug + "/"
 		selfLink, err := hal.NewLinkObject(href)
+
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -79,6 +89,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 		embeddedPost.Data()["date"] = date
 		embeddedPosts = append(embeddedPosts, embeddedPost)
 	}
+
 	posts, _ := hal.NewResourceRelation("posts")
 	posts.SetResources(embeddedPosts)
 	root.AddResource(posts)

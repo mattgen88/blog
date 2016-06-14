@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 // Category in an interface for categories
@@ -26,9 +27,14 @@ func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 		db:   db,
 		Name: name,
 	}
+
 	if c.Exists() {
-		c.Populate()
+		err := c.Populate()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
+
 	return c
 }
 
@@ -44,6 +50,7 @@ func (c *SQLCategory) Exists() bool {
 			return false
 		}
 	}
+	
 	return true
 }
 
@@ -52,21 +59,29 @@ func (c *SQLCategory) Populate() error {
 	if !c.Exists() {
 		return errors.New("Instance does not exist")
 	}
+
 	if c.populated {
 		return errors.New("Model already populated")
 	}
+
 	if c.dirty {
 		return errors.New("Model dirty")
 	}
 
 	// Fetch data and populate
-	err := c.db.QueryRow(`SELECT CategoryId, Name
-	FROM Categories
-	WHERE Name = ?`, c.Name).Scan(c.ID)
+	err := c.db.QueryRow(`SELECT CategoryId
+	FROM Category
+	WHERE Name = ?`, c.Name).Scan(&c.ID)
 
 	if err != nil {
-		return errors.New("Unknown error occurred")
+		return errors.New("Unknown error occurred: " + fmt.Sprintf("%s", err))
 	}
+
 	c.populated = true
 	return nil
+}
+
+// GetID returns the ID of a category
+func (c *SQLCategory) GetID() int {
+	return c.ID
 }

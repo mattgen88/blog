@@ -49,9 +49,11 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 		db:       db,
 		Username: username,
 	}
+
 	if u.Exists() {
 		u.Populate()
 	}
+
 	return u
 }
 
@@ -60,6 +62,7 @@ func (u *SQLUser) GetRealname() string {
 	if u.populated {
 		return u.Realname
 	}
+
 	return ""
 }
 
@@ -68,6 +71,7 @@ func (u *SQLUser) GetRole() string {
 	if u.populated {
 		return u.Role
 	}
+
 	return ""
 }
 
@@ -76,6 +80,7 @@ func (u *SQLUser) GetEmail() string {
 	if u.populated {
 		return u.Email
 	}
+
 	return ""
 }
 
@@ -84,6 +89,7 @@ func (u *SQLUser) GetCreated() *time.Time {
 	if u.populated {
 		return u.Created
 	}
+
 	return nil
 }
 
@@ -92,6 +98,7 @@ func (u *SQLUser) GetUsername() string {
 	if u.populated {
 		return u.Username
 	}
+
 	return ""
 }
 
@@ -100,15 +107,18 @@ func (u *SQLUser) GetID() int {
 	if u.populated {
 		return u.ID
 	}
+
 	return -1
 }
 
 // SetPassword sets the password of the user
 func (u *SQLUser) SetPassword(pw string) {
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+
 	if err != nil {
 		fmt.Println("An error occurred encrypting")
 	}
+
 	u.pwhash = string(bs)
 	u.dirty = true
 }
@@ -135,6 +145,7 @@ func (u *SQLUser) Exists() bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -143,6 +154,7 @@ func (u *SQLUser) Authenticate(pw string) bool {
 	if !u.populated {
 		return false
 	}
+
 	err := bcrypt.CompareHashAndPassword([]byte(u.pwhash), []byte(pw))
 	return err == nil
 }
@@ -167,21 +179,26 @@ func (u *SQLUser) Populate() error {
 	if !u.Exists() {
 		return errors.New("Instance does not exist")
 	}
+
 	if u.populated {
 		// Don't repopulate a populated model
 		return errors.New("Model already populated")
 	}
+
 	if u.dirty {
 		// Don't populate a dirty model
 		return errors.New("Model dirty")
 	}
+
 	// Fetch data and populate
 	err := u.db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
 	FROM Users
 	WHERE Username = ?`, u.Username).Scan(u.ID, u.Created, u.Realname, u.Email, u.Role)
+
 	if err != nil {
 		return errors.New("Unknown error occurred")
 	}
+
 	u.populated = true
 	return nil
 }
@@ -190,6 +207,7 @@ func (u *SQLUser) Populate() error {
 func (u *SQLUser) Save() error {
 	var result sql.Result
 	var err error
+
 	if u.populated {
 		// update
 		result, err = u.db.Exec(`UPDATE Users
@@ -199,7 +217,9 @@ func (u *SQLUser) Save() error {
 			Email = ?,
 			Role = (SELECT RoleID FROM Role where Name = ?)
 		WHERE UserId = ?`, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
+
 	} else {
+
 		result, err = u.db.Exec(`INSERT INTO Users (
 			Username,
 			Hash,
@@ -209,12 +229,14 @@ func (u *SQLUser) Save() error {
 			Role
 		) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, (SELECT RoleID FROM Role WHERE Name = ?))`, u.Username, u.pwhash, u.Realname, u.Email, u.Role)
 	}
+
 	if err != nil {
 		// Some kind of failure
 		return errors.New("Unable to save user")
 	}
 
 	count, err := result.RowsAffected()
+
 	if err != nil || count != 1 {
 		return errors.New("Unable to verify save")
 	}

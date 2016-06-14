@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	
-	"github.com/mattgen88/blog/models"
-	"github.com/howeyc/gopass"
-	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/howeyc/gopass"
+	"github.com/mattgen88/blog/models"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
