@@ -5,11 +5,13 @@ import (
 	"errors"
 )
 
+// Category in an interface for categories
 type Category interface {
 	GetName() string
 	GetId() int
 }
 
+// SQLCategory is a Category backed by SQL
 type SQLCategory struct {
 	db        *sql.DB
 	ID        int
@@ -18,6 +20,7 @@ type SQLCategory struct {
 	dirty     bool
 }
 
+// NewSQLCategory creates a SQLCategory instance configured with a connection
 func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 	c := &SQLCategory{
 		db:   db,
@@ -29,6 +32,7 @@ func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 	return c
 }
 
+// Exists check if the category exists
 func (c *SQLCategory) Exists() bool {
 	var count int
 	err := c.db.QueryRow(`SELECT COUNT(*) FROM Category WHERE Name = ?`, c.Name).Scan(&count)
@@ -41,6 +45,7 @@ func (c *SQLCategory) Exists() bool {
 	return true
 }
 
+// Populate the model with data from the database
 func (c *SQLCategory) Populate() error {
 	if !c.Exists() {
 		return errors.New("Instance does not exist")

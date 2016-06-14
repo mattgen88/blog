@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pmoule/go2hal/hal"
+
 )
 
 // Handler provides various http handlers

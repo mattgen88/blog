@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Post is an interface for describing posts
 type Post interface {
 	Exists() bool
 	Populate() error
@@ -17,6 +18,7 @@ type Post interface {
 	GetCategory() *SQLCategory
 }
 
+// SQLPost is a SQL backed Post
 type SQLPost struct {
 	db        *sql.DB
 	ID        int
@@ -30,6 +32,7 @@ type SQLPost struct {
 	dirty     bool
 }
 
+// Return a new instance of SQLPost backed by a database
 func NewSQLPost(slug string, db *sql.DB) *SQLPost {
 	p := &SQLPost{
 		db: db,
@@ -40,36 +43,47 @@ func NewSQLPost(slug string, db *sql.DB) *SQLPost {
 	return p
 }
 
+// GetAuthor returns the User who authored the post
 func (p *SQLPost) GetAuthor() *SQLUser {
 	if p.populated {
 		return p.Author
 	}
 	return nil
 }
+
+// GetTitle returns the title of the post
 func (p *SQLPost) GetTitle() string {
 	if p.populated {
 		return p.Title
 	}
 	return ""
 }
+
+// GetBody returns the body of the post
 func (p *SQLPost) GetBody() string {
 	if p.populated {
 		return p.Body
 	}
 	return ""
 }
+
+// GetDate returns the date the post was authored
 func (p *SQLPost) GetDate() *time.Time {
 	if p.populated {
 		return p.Date
 	}
 	return nil
 }
+
+// GetSlug returns the post's slug to uniquely identify it in URLs
 func (p *SQLPost) GetSlug() string {
 	if p.populated {
 		return p.Slug
 	}
 	return ""
 }
+
+// GetCategory returns the Category for the post
 func (p *SQLPost) GetCategory() *SQLCategory {
 	if p.populated {
 		return p.Category
@@ -77,6 +91,7 @@ func (p *SQLPost) GetCategory() *SQLCategory {
 	return nil
 }
 
+// Exists determines whether or not the given post, by slug, exists
 func (p *SQLPost) Exists() bool {
 	var count int
 	err := p.db.QueryRow(`SELECT COUNT(*) FROM Posts WHERE Slug = ?`, p.Slug).Scan(&count)
@@ -89,6 +104,7 @@ func (p *SQLPost) Exists() bool {
 	return true
 }
 
+// Populate populates the model with data from the database
 func (p *SQLPost) Populate() error {
 	if !p.Exists() {
 		return errors.New("instance does not exist")
