@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pmoule/go2hal/hal"
-
 )
 
 // UsersListHandler handles requests for users
@@ -20,7 +19,7 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddLink(self)
 
-	rows, err := h.db.Query("SELECT Username from Users")
+	rows, err := h.db.Query(`SELECT Username FROM Users`)
 	if err != nil {
 		fmt.Println(err)
 	}

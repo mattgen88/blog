@@ -35,7 +35,9 @@ func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 // Exists check if the category exists
 func (c *SQLCategory) Exists() bool {
 	var count int
-	err := c.db.QueryRow(`SELECT COUNT(*) FROM Category WHERE Name = ?`, c.Name).Scan(&count)
+	err := c.db.QueryRow(`SELECT COUNT(*)
+	FROM Category
+	WHERE Name = ?`, c.Name).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

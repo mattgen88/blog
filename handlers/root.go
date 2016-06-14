@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/pmoule/go2hal/hal"
-
 )
 
 // RootHandler handles requests for the root of the API

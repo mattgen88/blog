@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pmoule/go2hal/hal"
-
 )
 
 // CategoryHandler handles requests for categories
@@ -35,7 +34,11 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddLink(self)
 
-	rows, err := h.db.Query("SELECT PostId, Title, Body, Date, Slug, Category.Name, Users.Username from Posts JOIN Category on Category.CategoryId = Posts.Category JOIN Users on Users.UserId = Posts.Author")
+	rows, err := h.db.Query(`SELECT PostId, Title, Body, Date, Slug, Category.Name, Users.Username
+		FROM Posts
+		JOIN Category on Category.CategoryId = Posts.Category
+		JOIN Users on Users.UserId = Posts.Author`)
+	
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pmoule/go2hal/hal"
 )
+
 // ErrorHandler handles requests for users
 func (h *Handler) ErrorHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
