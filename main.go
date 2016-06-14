@@ -14,10 +14,7 @@ import (
 
 	"github.com/mattgen88/blog/handlers"
 	"github.com/mattgen88/blog/setup"
-
 )
-
-
 
 func main() {
 	// Set configuration file information

@@ -55,6 +55,7 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 	return u
 }
 
+// GetRealname returns the real name of the user
 func (u *SQLUser) GetRealname() string {
 	if u.populated {
 		return u.Realname
@@ -62,6 +63,7 @@ func (u *SQLUser) GetRealname() string {
 	return ""
 }
 
+// GetRole returns the roles for the user
 func (u *SQLUser) GetRole() string {
 	if u.populated {
 		return u.Role
@@ -69,6 +71,7 @@ func (u *SQLUser) GetRole() string {
 	return ""
 }
 
+// GetEmail returns the email
 func (u *SQLUser) GetEmail() string {
 	if u.populated {
 		return u.Email
@@ -76,6 +79,7 @@ func (u *SQLUser) GetEmail() string {
 	return ""
 }
 
+// GetCreated returns the time it was created
 func (u *SQLUser) GetCreated() *time.Time {
 	if u.populated {
 		return u.Created
@@ -83,6 +87,7 @@ func (u *SQLUser) GetCreated() *time.Time {
 	return nil
 }
 
+// GetUsername returns the username
 func (u *SQLUser) GetUsername() string {
 	if u.populated {
 		return u.Username
@@ -90,6 +95,7 @@ func (u *SQLUser) GetUsername() string {
 	return ""
 }
 
+// GetID returns the user's ID
 func (u *SQLUser) GetID() int {
 	if u.populated {
 		return u.ID
