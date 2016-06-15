@@ -50,7 +50,7 @@ func (c *SQLCategory) Exists() bool {
 			return false
 		}
 	}
-	
+
 	return true
 }
 

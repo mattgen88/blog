@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Post is an interface for describing posts
-type Post interface {
+// Article is an interface for describing articles
+type Article interface {
 	Exists() bool
 	Populate() error
 	GetSlug() string
@@ -18,8 +18,8 @@ type Post interface {
 	GetCategory() *SQLCategory
 }
 
-// SQLPost is a SQL backed Post
-type SQLPost struct {
+// SQLArticle is a SQL backed Article
+type SQLArticle struct {
 	db        *sql.DB
 	ID        int
 	Author    *SQLUser
@@ -32,9 +32,9 @@ type SQLPost struct {
 	dirty     bool
 }
 
-// Return a new instance of SQLPost backed by a database
-func NewSQLPost(slug string, db *sql.DB) *SQLPost {
-	p := &SQLPost{
+// Return a new instance of SQLArticle backed by a database
+func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
+	p := &SQLArticle{
 		db: db,
 	}
 
@@ -46,7 +46,7 @@ func NewSQLPost(slug string, db *sql.DB) *SQLPost {
 }
 
 // GetAuthor returns the User who authored the post
-func (p *SQLPost) GetAuthor() *SQLUser {
+func (p *SQLArticle) GetAuthor() *SQLUser {
 	if p.populated {
 		return p.Author
 	}
@@ -55,7 +55,7 @@ func (p *SQLPost) GetAuthor() *SQLUser {
 }
 
 // GetTitle returns the title of the post
-func (p *SQLPost) GetTitle() string {
+func (p *SQLArticle) GetTitle() string {
 	if p.populated {
 		return p.Title
 	}
@@ -64,7 +64,7 @@ func (p *SQLPost) GetTitle() string {
 }
 
 // GetBody returns the body of the post
-func (p *SQLPost) GetBody() string {
+func (p *SQLArticle) GetBody() string {
 	if p.populated {
 		return p.Body
 	}
@@ -73,7 +73,7 @@ func (p *SQLPost) GetBody() string {
 }
 
 // GetDate returns the date the post was authored
-func (p *SQLPost) GetDate() *time.Time {
+func (p *SQLArticle) GetDate() *time.Time {
 	if p.populated {
 		return p.Date
 	}
@@ -82,7 +82,7 @@ func (p *SQLPost) GetDate() *time.Time {
 }
 
 // GetSlug returns the post's slug to uniquely identify it in URLs
-func (p *SQLPost) GetSlug() string {
+func (p *SQLArticle) GetSlug() string {
 	if p.populated {
 		return p.Slug
 	}
@@ -91,7 +91,7 @@ func (p *SQLPost) GetSlug() string {
 }
 
 // GetCategory returns the Category for the post
-func (p *SQLPost) GetCategory() *SQLCategory {
+func (p *SQLArticle) GetCategory() *SQLCategory {
 	if p.populated {
 		return p.Category
 	}
@@ -100,9 +100,9 @@ func (p *SQLPost) GetCategory() *SQLCategory {
 }
 
 // Exists determines whether or not the given post, by slug, exists
-func (p *SQLPost) Exists() bool {
+func (p *SQLArticle) Exists() bool {
 	var count int
-	err := p.db.QueryRow(`SELECT COUNT(*) FROM Posts WHERE Slug = ?`, p.Slug).Scan(&count)
+	err := p.db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -113,7 +113,7 @@ func (p *SQLPost) Exists() bool {
 }
 
 // Populate populates the model with data from the database
-func (p *SQLPost) Populate() error {
+func (p *SQLArticle) Populate() error {
 	if !p.Exists() {
 		return errors.New("instance does not exist")
 	}
@@ -131,10 +131,10 @@ func (p *SQLPost) Populate() error {
 		category string
 	)
 
-	err := p.db.QueryRow(`SELECT PostId, Title, Users.Username, Body, Date, Slug, Category.Name
-	FROM Posts, Category
-	JOIN Category ON Posts.Category = Category.CategoryID
-	JOIN Users ON Posts.Author = Users.UserId
+	err := p.db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Category.Name
+	FROM Articles, Category
+	JOIN Category ON Articles.Category = Category.CategoryID
+	JOIN Users ON Articles.Author = Users.UserId
 	WHERE Slug = ?`).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {

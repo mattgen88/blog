@@ -10,7 +10,7 @@ import (
 )
 
 // CategoryHandler handles requests for categories
-// @TODO: return list of posts in that category and embed them
+// @TODO: return list of articles in that category and embed them
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
@@ -42,10 +42,10 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 	root.AddLink(self)
 
 	// @TODO: Move this off to the model...
-	rows, err := h.db.Query(`SELECT PostId, Title, Body, Date, Slug, Category.Name, Users.Username
-		FROM Posts
-		JOIN Category on Category.CategoryId = Posts.Category
-		JOIN Users on Users.UserId = Posts.Author`)
+	rows, err := h.db.Query(`SELECT ArticleId, Title, Body, Date, Slug, Category.Name, Users.Username
+		FROM Articles
+		JOIN Category on Category.CategoryId = Articles.Category
+		JOIN Users on Users.UserId = Articles.Author`)
 
 	if err != nil {
 		fmt.Println(err)
@@ -53,7 +53,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
-	var embeddedPosts []hal.Resource
+	var embeddedArticles []hal.Resource
 
 	for rows.Next() {
 		var (
@@ -81,18 +81,18 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 		self = hal.NewSelfLinkRelation()
 		self.SetLink(selfLink)
 
-		embeddedPost := hal.NewResourceObject()
-		embeddedPost.AddLink(self)
-		embeddedPost.Data()["title"] = title
-		embeddedPost.Data()["author"] = author
-		embeddedPost.Data()["category"] = category
-		embeddedPost.Data()["date"] = date
-		embeddedPosts = append(embeddedPosts, embeddedPost)
+		embeddedArticle := hal.NewResourceObject()
+		embeddedArticle.AddLink(self)
+		embeddedArticle.Data()["title"] = title
+		embeddedArticle.Data()["author"] = author
+		embeddedArticle.Data()["category"] = category
+		embeddedArticle.Data()["date"] = date
+		embeddedArticles = append(embeddedArticles, embeddedArticle)
 	}
 
-	posts, _ := hal.NewResourceRelation("posts")
-	posts.SetResources(embeddedPosts)
-	root.AddResource(posts)
+	articles, _ := hal.NewResourceRelation("articles")
+	articles.SetResources(embeddedArticles)
+	root.AddResource(articles)
 
 	w.Write(JSONify(root))
 }

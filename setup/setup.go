@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	tableClean          = `DROP TABLE IF EXISTS Posts; DROP TABLE IF EXISTS Category; DROP TABLE IF EXISTS Users; DROP TABLE IF EXISTS Role;`
+	tableClean          = `DROP TABLE IF EXISTS Articles; DROP TABLE IF EXISTS Category; DROP TABLE IF EXISTS Users; DROP TABLE IF EXISTS Role;`
 	categoryTableCreate = `CREATE TABLE Category (
 		CategoryId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Name Text NOT NULL
@@ -46,8 +46,8 @@ const (
 		Email Text,
 		Role Integer NULL REFERENCES Role(RoleID)
 	);`
-	postTableCreate = `CREATE TABLE Posts (
-		PostId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	articlesTableCreate = `CREATE TABLE Articles (
+		ArticleId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Title Text NOT NULL,
 		Author Integer NOT NULL REFERENCES Users(UserId),
 		Body Text NOT NULL,
@@ -55,7 +55,7 @@ const (
 		Slug Text NOT NULL,
 		Category Integer NOT NULL DEFAULT 1 REFERENCES Category(CategoryId)
 	);`
-	postTableInsert = `INSERT INTO Posts (Title, Author, Body, Date, Slug, Category) VALUES ("Test", 1, "This is a test", CURRENT_TIMESTAMP, "test", 1);`
+	articlesTableInsert = `INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES ("Test", 1, "This is a test", CURRENT_TIMESTAMP, "test", 1);`
 )
 
 // Called to initialize the database
@@ -72,9 +72,10 @@ instructions and you will have working blog.`)
 
 	_, err := db.Exec(tableClean)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("clean table", err)
 		return
 	}
+
 	_, err = db.Exec(categoryTableCreate)
 	if err != nil {
 		fmt.Println(err)
@@ -148,7 +149,9 @@ instructions and you will have working blog.`)
 		return
 	}
 
-	rows, err := db.Query("SELECT UserId FROM Users WHERE email=?", email)
+	rows, err := db.Query(`SELECT UserId
+		FROM Users
+		WHERE email=?`, email)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -163,12 +166,12 @@ instructions and you will have working blog.`)
 		fmt.Println(err)
 	}
 
-	_, err = db.Exec(postTableCreate)
+	_, err = db.Exec(articlesTableCreate)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	_, err = db.Exec(postTableInsert, u.ID)
+	_, err = db.Exec(articlesTableInsert, u.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
