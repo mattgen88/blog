@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -43,6 +44,49 @@ func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	}
 
 	return p
+}
+
+func NewSQLArticleList(categoryId int, db *sql.DB) []*SQLArticle {
+	var articles []*SQLArticle
+
+	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
+		FROM Articles
+		JOIN Users on Users.UserId = Articles.Author
+		WHERE Articles.Category = ?`, categoryId)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			articleId int
+			title     string
+			date      *time.Time
+			slug      string
+			author    string
+		)
+
+		if err := rows.Scan(&articleId, &title, &slug, &date, &author); err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		article := &SQLArticle{
+			db:     db,
+			ID:     articleId,
+			Title:  title,
+			Slug:   slug,
+			Date:   date,
+			Author: NewSQLUser(author, db),
+		}
+
+		articles = append(articles, article)
+
+	}
+	return articles
 }
 
 // GetAuthor returns the User who authored the post

@@ -10,7 +10,6 @@ import (
 )
 
 // CategoryHandler handles requests for categories
-// @TODO: return list of articles in that category and embed them
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
@@ -26,6 +25,35 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	category := models.NewSQLCategory(c, h.db)
 
 	root.Data()["id"] = category.GetID()
+
+	categories := models.NewSQLArticleList(category.GetID(), h.db)
+
+	var embeddedArticles []hal.Resource
+
+	for _, article := range categories {
+
+		href := fmt.Sprintf("/articles/%s/%s", c, article.Slug)
+		selfLink, err := hal.NewLinkObject(href)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		self = hal.NewSelfLinkRelation()
+		self.SetLink(selfLink)
+
+		embeddedArticle := hal.NewResourceObject()
+		embeddedArticle.AddLink(self)
+		embeddedArticle.Data()["title"] = article.Title
+		embeddedArticle.Data()["author"] = article.Author
+		embeddedArticle.Data()["date"] = article.Date
+		embeddedArticles = append(embeddedArticles, embeddedArticle)
+	}
+
+	articles, _ := hal.NewResourceRelation("articles")
+	articles.SetResources(embeddedArticles)
+
+	root.AddResource(articles)
 
 	w.Write(JSONify(root))
 }
@@ -57,16 +85,16 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var (
-			postId   int
-			title    string
-			body     string
-			date     string
-			slug     string
-			category string
-			author   string
+			articleId int
+			title     string
+			body      string
+			date      string
+			slug      string
+			category  string
+			author    string
 		)
 
-		if err := rows.Scan(&postId, &title, &body, &date, &slug, &category, &author); err != nil {
+		if err := rows.Scan(&articleId, &title, &body, &date, &slug, &category, &author); err != nil {
 			fmt.Println(err)
 			continue
 		}
@@ -92,6 +120,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	articles, _ := hal.NewResourceRelation("articles")
 	articles.SetResources(embeddedArticles)
+
 	root.AddResource(articles)
 
 	w.Write(JSONify(root))
