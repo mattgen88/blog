@@ -46,7 +46,7 @@ func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	return p
 }
 
-func NewSQLArticleList(categoryId int, db *sql.DB) []*SQLArticle {
+func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
 	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
