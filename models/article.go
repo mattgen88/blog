@@ -36,6 +36,7 @@ type SQLArticle struct {
 // Return a new instance of SQLArticle backed by a database
 func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	p := &SQLArticle{
+		Slug: slug,
 		db: db,
 	}
 
@@ -75,11 +76,57 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 		}
 
 		article := &SQLArticle{
+			db:       db,
+			ID:       articleId,
+			Title:    title,
+			Slug:     slug,
+			Date:     date,
+			Author:   NewSQLUser(author, db),
+		}
+
+		articles = append(articles, article)
+
+	}
+	return articles
+}
+
+func ArticleList(db *sql.DB) []*SQLArticle {
+	var articles []*SQLArticle
+
+	// @TODO: Move this off to the model...
+	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name
+		FROM Articles
+		JOIN Category on Category.CategoryId = Articles.Category
+		JOIN Users on Users.UserId = Articles.Author`)
+
+	if err != nil {
+		fmt.Println("Error querying for all articles", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			articleId int
+			title     string
+			date      *time.Time
+			slug      string
+			author    string
+			category  string
+		)
+
+		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category); err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		article := &SQLArticle{
 			db:     db,
 			ID:     articleId,
 			Title:  title,
 			Slug:   slug,
 			Date:   date,
+			Category: NewSQLCategory(category, db),
 			Author: NewSQLUser(author, db),
 		}
 
@@ -150,9 +197,13 @@ func (p *SQLArticle) Exists() bool {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Println("No rows for slug " + p.Slug)
 			return false
 		}
+		fmt.Println("Some other error", err)
+		return false
 	}
+	fmt.Println("Found " + p.Slug);
 	return true
 }
 
@@ -175,15 +226,18 @@ func (p *SQLArticle) Populate() error {
 		category string
 	)
 
-	err := p.db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Category.Name
-	FROM Articles, Category
+	err := p.db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Name
+	FROM Articles
 	JOIN Category ON Articles.Category = Category.CategoryID
 	JOIN Users ON Articles.Author = Users.UserId
-	WHERE Slug = ?`).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
+	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
+		fmt.Println("Unknown error", err)
 		return errors.New("Unknown error occurred")
 	}
+
+	fmt.Println(p)
 
 	p.Author = NewSQLUser(author, p.db)
 	p.Category = NewSQLCategory(category, p.db)

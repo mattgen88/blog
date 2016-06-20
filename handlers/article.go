@@ -45,7 +45,7 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 		embeddedArticle := hal.NewResourceObject()
 		embeddedArticle.AddLink(self)
 		embeddedArticle.Data()["title"] = article.Title
-		embeddedArticle.Data()["author"] = article.Author
+		embeddedArticle.Data()["author"] = article.Author.Username
 		embeddedArticle.Data()["date"] = article.Date
 		embeddedArticles = append(embeddedArticles, embeddedArticle)
 	}
@@ -69,37 +69,11 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddLink(self)
 
-	// @TODO: Move this off to the model...
-	rows, err := h.db.Query(`SELECT ArticleId, Title, Body, Date, Slug, Category.Name, Users.Username
-		FROM Articles
-		JOIN Category on Category.CategoryId = Articles.Category
-		JOIN Users on Users.UserId = Articles.Author`)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer rows.Close()
-
 	var embeddedArticles []hal.Resource
 
-	for rows.Next() {
-		var (
-			articleId int
-			title     string
-			body      string
-			date      string
-			slug      string
-			category  string
-			author    string
-		)
+	for _, article := range models.ArticleList(h.db) {
 
-		if err := rows.Scan(&articleId, &title, &body, &date, &slug, &category, &author); err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		href := "/articles/" + category + "/" + slug + "/"
+		href := fmt.Sprintf("/articles/%s/%s", article.Category.Name, article.Slug)
 		selfLink, err := hal.NewLinkObject(href)
 
 		if err != nil {
@@ -111,10 +85,9 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 		embeddedArticle := hal.NewResourceObject()
 		embeddedArticle.AddLink(self)
-		embeddedArticle.Data()["title"] = title
-		embeddedArticle.Data()["author"] = author
-		embeddedArticle.Data()["category"] = category
-		embeddedArticle.Data()["date"] = date
+		embeddedArticle.Data()["title"] = article.Title
+		embeddedArticle.Data()["author"] = article.Author.Username
+		embeddedArticle.Data()["date"] = article.Date
 		embeddedArticles = append(embeddedArticles, embeddedArticle)
 	}
 
@@ -128,6 +101,9 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 // ArticleHandler handles requests for articles
 func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(mux.Vars(r)["id"])
+	article := models.NewSQLArticle(mux.Vars(r)["id"], h.db)
+
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -138,6 +114,7 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	root.AddLink(self)
 	root.Data()["category"] = mux.Vars(r)["category"]
 	root.Data()["id"] = mux.Vars(r)["id"]
+	root.Data()["body"] = article.GetBody()
 
 	w.Write(JSONify(root))
 }
