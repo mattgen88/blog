@@ -88,6 +88,17 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 		embeddedArticle.Data()["title"] = article.Title
 		embeddedArticle.Data()["author"] = article.Author.Username
 		embeddedArticle.Data()["date"] = article.Date
+		embeddedArticle.Data()["category"] = article.Category.Name
+		embeddedArticle.Data()["slug"] = article.Slug
+
+		var trunc int
+		if len(article.Body) <= 100 {
+			trunc = len(article.Body)
+		} else {
+			trunc = 100
+		}
+		embeddedArticle.Data()["description"] = article.Body[0:trunc]
+
 		embeddedArticles = append(embeddedArticles, embeddedArticle)
 	}
 

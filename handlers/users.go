@@ -48,7 +48,7 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 
 		embeddedUser := hal.NewResourceObject()
 		embeddedUser.AddLink(self)
-		embeddedUser.Data()["name"] = username
+		embeddedUser.Data()["username"] = username
 		embeddedUsers = append(embeddedUsers, embeddedUser)
 	}
 	users, _ := hal.NewResourceRelation("users")

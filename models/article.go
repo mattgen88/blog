@@ -37,7 +37,7 @@ type SQLArticle struct {
 func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	p := &SQLArticle{
 		Slug: slug,
-		db: db,
+		db:   db,
 	}
 
 	if p.Exists() {
@@ -76,12 +76,12 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 		}
 
 		article := &SQLArticle{
-			db:       db,
-			ID:       articleId,
-			Title:    title,
-			Slug:     slug,
-			Date:     date,
-			Author:   NewSQLUser(author, db),
+			db:     db,
+			ID:     articleId,
+			Title:  title,
+			Slug:   slug,
+			Date:   date,
+			Author: NewSQLUser(author, db),
 		}
 
 		articles = append(articles, article)
@@ -94,7 +94,7 @@ func ArticleList(db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
 	// @TODO: Move this off to the model...
-	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name
+	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
 		FROM Articles
 		JOIN Category on Category.CategoryId = Articles.Category
 		JOIN Users on Users.UserId = Articles.Author`)
@@ -113,21 +113,23 @@ func ArticleList(db *sql.DB) []*SQLArticle {
 			slug      string
 			author    string
 			category  string
+			body      string
 		)
 
-		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category); err != nil {
+		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category, &body); err != nil {
 			fmt.Println(err)
 			continue
 		}
 
 		article := &SQLArticle{
-			db:     db,
-			ID:     articleId,
-			Title:  title,
-			Slug:   slug,
-			Date:   date,
+			db:       db,
+			ID:       articleId,
+			Title:    title,
+			Slug:     slug,
+			Body:     body,
+			Date:     date,
 			Category: NewSQLCategory(category, db),
-			Author: NewSQLUser(author, db),
+			Author:   NewSQLUser(author, db),
 		}
 
 		articles = append(articles, article)
@@ -203,7 +205,7 @@ func (p *SQLArticle) Exists() bool {
 		fmt.Println("Some other error", err)
 		return false
 	}
-	fmt.Println("Found " + p.Slug);
+	fmt.Println("Found " + p.Slug)
 	return true
 }
 

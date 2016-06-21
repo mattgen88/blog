@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/mattgen88/blog/handlers"
+	"github.com/mattgen88/blog/middleware"
 	"github.com/mattgen88/blog/setup"
 )
 
@@ -80,6 +81,8 @@ func main() {
 
 	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}", h.UserHandler)
 	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}/", h.UserHandler).Name("user")
+
+	r.Handle("/authtest", middleware.AuthHandler(http.HandlerFunc(h.AuthTest)))
 
 	r.NotFoundHandler = http.HandlerFunc(h.ErrorHandler)
 
