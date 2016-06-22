@@ -9,55 +9,6 @@ import (
 	"github.com/pmoule/go2hal/hal"
 )
 
-// CategoryHandler handles requests for categories
-func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
-
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-
-	c := mux.Vars(r)["category"]
-
-	category := models.NewSQLCategory(c, h.db)
-
-	root.Data()["id"] = category.GetID()
-
-	categories := models.ArticleListByCategory(category.GetID(), h.db)
-
-	var embeddedArticles []hal.Resource
-
-	for _, article := range categories {
-
-		href := fmt.Sprintf("/articles/%s/%s", c, article.Slug)
-		selfLink, err := hal.NewLinkObject(href)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		self = hal.NewSelfLinkRelation()
-		self.SetLink(selfLink)
-
-		embeddedArticle := hal.NewResourceObject()
-		embeddedArticle.AddLink(self)
-		embeddedArticle.Data()["title"] = article.Title
-		embeddedArticle.Data()["author"] = article.Author.Username
-		embeddedArticle.Data()["date"] = article.Date
-		embeddedArticles = append(embeddedArticles, embeddedArticle)
-	}
-
-	articles, _ := hal.NewResourceRelation("articles")
-	articles.SetResources(embeddedArticles)
-
-	root.AddResource(articles)
-
-	w.Write(JSONify(root))
-}
-
 // ArticleListHandler handles requests for articles
 func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
@@ -123,9 +74,14 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
-	root.Data()["category"] = mux.Vars(r)["category"]
+	// root.Data()["category"] = mux.Vars(r)["category"]
 	root.Data()["id"] = mux.Vars(r)["id"]
 	root.Data()["body"] = article.GetBody()
+	root.Data()["title"] = article.Title
+	root.Data()["author"] = article.Author.Username
+	root.Data()["date"] = article.Date
+	root.Data()["category"] = article.Category.Name
+	root.Data()["slug"] = article.Slug
 
 	w.Write(JSONify(root))
 }
