@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 )
 
@@ -56,7 +56,7 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 		WHERE Articles.Category = ?`, categoryId)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	defer rows.Close()
@@ -71,7 +71,7 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 		)
 
 		if err := rows.Scan(&articleId, &title, &slug, &date, &author); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -100,7 +100,7 @@ func ArticleList(db *sql.DB) []*SQLArticle {
 		JOIN Users on Users.UserId = Articles.Author`)
 
 	if err != nil {
-		fmt.Println("Error querying for all articles", err)
+		log.Println("Error querying for all articles", err)
 	}
 
 	defer rows.Close()
@@ -117,7 +117,7 @@ func ArticleList(db *sql.DB) []*SQLArticle {
 		)
 
 		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category, &body); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
@@ -199,13 +199,13 @@ func (p *SQLArticle) Exists() bool {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			fmt.Println("No rows for slug " + p.Slug)
+			log.Println("No rows for slug " + p.Slug)
 			return false
 		}
-		fmt.Println("Some other error", err)
+		log.Println("Some other error", err)
 		return false
 	}
-	fmt.Println("Found " + p.Slug)
+	log.Println("Found " + p.Slug)
 	return true
 }
 
@@ -235,11 +235,9 @@ func (p *SQLArticle) Populate() error {
 	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
-		fmt.Println("Unknown error", err)
+		log.Println("Unknown error", err)
 		return errors.New("Unknown error occurred")
 	}
-
-	fmt.Println(p)
 
 	p.Author = NewSQLUser(author, p.db)
 	p.Category = NewSQLCategory(category, p.db)

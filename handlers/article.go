@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -28,7 +29,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 		selfLink, err := hal.NewLinkObject(href)
 
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 
 		self = hal.NewSelfLinkRelation()
@@ -63,7 +64,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 // ArticleHandler handles requests for articles
 func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(mux.Vars(r)["id"])
+	log.Println(mux.Vars(r)["id"])
 	article := models.NewSQLArticle(mux.Vars(r)["id"], h.db)
 
 	root := hal.NewResourceObject()

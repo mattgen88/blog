@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -116,7 +116,7 @@ func (u *SQLUser) SetPassword(pw string) {
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 
 	if err != nil {
-		fmt.Println("An error occurred encrypting")
+		log.Println(err)
 	}
 
 	u.pwhash = string(bs)

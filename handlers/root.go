@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/pmoule/go2hal/hal"
@@ -21,7 +21,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		// Error creating link relation
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -34,7 +34,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		// Error creating link relation
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -47,7 +47,7 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		// Error creating link relation
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 

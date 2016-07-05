@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 
 	"github.com/gorilla/mux"
 	"github.com/pmoule/go2hal/hal"
@@ -26,7 +26,7 @@ func JSONify(root hal.Resource) []byte {
 	bytes, err := encoder.ToJSON(root)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
 	return bytes

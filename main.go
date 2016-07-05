@@ -51,7 +51,7 @@ func main() {
 
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		fmt.Println("Error enabling foreign keys")
+		log.Println("Error enabling foreign keys")
 		return
 	}
 

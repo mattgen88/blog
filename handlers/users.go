@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/pmoule/go2hal/hal"
+	"log"
+	"net/http"
 )
 
 // UsersListHandler handles requests for users
@@ -23,7 +22,7 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 		FROM Users`)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	defer rows.Close()
@@ -33,14 +32,14 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var username string
 		if err := rows.Scan(&username); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 
 		href := "/users/" + username
 		selfLink, err := hal.NewLinkObject(href)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 
 		self = hal.NewSelfLinkRelation()

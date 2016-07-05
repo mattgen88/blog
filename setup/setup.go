@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -72,44 +73,44 @@ instructions and you will have working blog.`)
 
 	_, err := db.Exec(tableClean)
 	if err != nil {
-		fmt.Println("clean table", err)
+		log.Println(err)
 		return
 	}
 
 	_, err = db.Exec(categoryTableCreate)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	_, err = db.Exec(categoryTableInsert)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	_, err = db.Exec(roleTableCreate)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	_, err = db.Exec(roleTableInsert)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	_, err = db.Exec(userTableCreate)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
 	fmt.Print("What is the username you would like to use? ")
 	username, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	username = strings.TrimSpace(username)
@@ -117,7 +118,7 @@ instructions and you will have working blog.`)
 	fmt.Print("What is the real name you would like to use? ")
 	realname, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -126,7 +127,7 @@ instructions and you will have working blog.`)
 	fmt.Print("What is the email you would like to use? ")
 	email, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	email = strings.TrimSpace(email)
@@ -135,7 +136,7 @@ instructions and you will have working blog.`)
 
 	password, err := gopass.GetPasswdMasked()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -145,7 +146,7 @@ instructions and you will have working blog.`)
 	u.SetEmail(email)
 	err = u.Save()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -153,27 +154,27 @@ instructions and you will have working blog.`)
 		FROM Users
 		WHERE email=?`, email)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int
 		if err := rows.Scan(&id); err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 	if err := rows.Err(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	_, err = db.Exec(articlesTableCreate)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	_, err = db.Exec(articlesTableInsert, u.ID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 

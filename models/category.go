@@ -31,11 +31,16 @@ func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 	if c.Exists() {
 		err := c.Populate()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 
 	return c
+}
+
+// GetID returns the ID of a category
+func (c *SQLCategory) GetID() int {
+	return c.ID
 }
 
 // Exists check if the category exists
@@ -79,9 +84,4 @@ func (c *SQLCategory) Populate() error {
 
 	c.populated = true
 	return nil
-}
-
-// GetID returns the ID of a category
-func (c *SQLCategory) GetID() int {
-	return c.ID
 }

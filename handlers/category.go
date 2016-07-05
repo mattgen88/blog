@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -36,7 +37,7 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 		selfLink, err := hal.NewLinkObject(href)
 
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 
 		self = hal.NewSelfLinkRelation()
