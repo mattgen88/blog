@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"fmt"
 )
 

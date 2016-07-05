@@ -11,7 +11,7 @@ import (
 
 // User is a user in the system
 type User interface {
-	SetPassword(string)
+	SetPassword(string) string
 	SetRealName(string)
 	SetEmail(string)
 	Exists() bool
@@ -19,7 +19,6 @@ type User interface {
 	IsAuthenticated() bool
 	HasRole(string)
 	Populate() error
-	Save()
 	GetRealname() string
 	GetRole() string
 	GetEmail() string
@@ -112,7 +111,7 @@ func (u *SQLUser) GetID() int {
 }
 
 // SetPassword sets the password of the user
-func (u *SQLUser) SetPassword(pw string) {
+func (u *SQLUser) SetPassword(pw string) string {
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 
 	if err != nil {
@@ -121,6 +120,7 @@ func (u *SQLUser) SetPassword(pw string) {
 
 	u.pwhash = string(bs)
 	u.dirty = true
+	return string(bs)
 }
 
 // SetRealName sets the real name of the user
@@ -200,47 +200,5 @@ func (u *SQLUser) Populate() error {
 	}
 
 	u.populated = true
-	return nil
-}
-
-// Save saves struct back to database
-func (u *SQLUser) Save() error {
-	var result sql.Result
-	var err error
-
-	if u.populated {
-		// update
-		result, err = u.db.Exec(`UPDATE Users
-		SET
-			Hash = ?,
-			RealName = ?,
-			Email = ?,
-			Role = (SELECT RoleID FROM Role where Name = ?)
-		WHERE UserId = ?`, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
-
-	} else {
-
-		result, err = u.db.Exec(`INSERT INTO Users (
-			Username,
-			Hash,
-			Created,
-			RealName,
-			Email,
-			Role
-		) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?, (SELECT RoleID FROM Role WHERE Name = ?))`, u.Username, u.pwhash, u.Realname, u.Email, u.Role)
-	}
-
-	if err != nil {
-		// Some kind of failure
-		return errors.New("Unable to save user")
-	}
-
-	count, err := result.RowsAffected()
-
-	if err != nil || count != 1 {
-		return errors.New("Unable to verify save")
-	}
-
-	u.dirty = false
 	return nil
 }

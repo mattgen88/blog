@@ -47,6 +47,26 @@ const (
 		Email Text,
 		Role Integer NULL REFERENCES Role(RoleID)
 	);`
+	userTableInsert = `INSERT INTO Users (
+		Username,
+		Hash,
+		Created,
+		RealName,
+		Email,
+		Role
+	) VALUES (
+		?,
+		?,
+		CURRENT_TIMESTAMP,
+		?,
+		?,
+		(
+			SELECT RoleID
+			FROM Role
+			WHERE Name = ?
+		)
+	);`
+
 	articlesTableCreate = `CREATE TABLE Articles (
 		ArticleId Integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 		Title Text NOT NULL,
@@ -141,10 +161,11 @@ instructions and you will have working blog.`)
 	}
 
 	u := models.NewSQLUser(username, db)
-	u.SetPassword(strings.TrimSpace(string(password)))
+	pwhash := u.SetPassword(strings.TrimSpace(string(password)))
 	u.SetRealName(realname)
 	u.SetEmail(email)
-	err = u.Save()
+
+	_, err = db.Exec(userTableInsert, u.Username, pwhash, u.Realname, u.Email, u.Role)
 	if err != nil {
 		log.Println(err)
 		return
