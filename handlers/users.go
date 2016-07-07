@@ -1,10 +1,13 @@
 package handlers
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/pmoule/go2hal/hal"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/pmoule/go2hal/hal"
+
+	"github.com/mattgen88/blog/util"
 )
 
 // UsersListHandler handles requests for users
@@ -54,7 +57,7 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	users.SetResources(embeddedUsers)
 	root.AddResource(users)
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }
 
 // UserHandler handles requests for users
@@ -69,5 +72,5 @@ func (h *Handler) UserHandler(w http.ResponseWriter, r *http.Request) {
 	root.AddLink(self)
 	root.Data()["username"] = mux.Vars(r)["id"]
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }

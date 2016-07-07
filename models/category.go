@@ -3,8 +3,8 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"fmt"
+	"log"
 )
 
 // Category in an interface for categories

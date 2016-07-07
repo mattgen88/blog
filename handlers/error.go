@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/mattgen88/blog/util"
 	"github.com/pmoule/go2hal/hal"
 )
 
 // ErrorHandler handles requests for users
-func (h *Handler) ErrorHandler(w http.ResponseWriter, r *http.Request) {
+func ErrorHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -20,5 +21,5 @@ func (h *Handler) ErrorHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNotFound)
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }

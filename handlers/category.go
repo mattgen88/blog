@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattgen88/blog/models"
 	"github.com/pmoule/go2hal/hal"
+
+	"github.com/mattgen88/blog/models"
+	"github.com/mattgen88/blog/util"
 )
 
 // CategoryHandler handles requests for categories
@@ -56,5 +58,5 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddResource(articles)
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }

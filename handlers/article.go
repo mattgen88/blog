@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/mattgen88/blog/models"
 	"github.com/pmoule/go2hal/hal"
+
+	"github.com/mattgen88/blog/models"
+	"github.com/mattgen88/blog/util"
 )
 
 // ArticleListHandler handles requests for articles
@@ -59,7 +61,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.AddResource(articles)
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }
 
 // ArticleHandler handles requests for articles
@@ -84,5 +86,5 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	root.Data()["category"] = article.Category.Name
 	root.Data()["slug"] = article.Slug
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }

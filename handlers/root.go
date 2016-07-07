@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mattgen88/blog/util"
 	"github.com/pmoule/go2hal/hal"
 )
 
@@ -56,5 +57,5 @@ func (h *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 	root.AddLink(category)
 
 	// Write it out
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }

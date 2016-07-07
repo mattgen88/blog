@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/pmoule/go2hal/hal"
+
+	"github.com/mattgen88/blog/util"
 )
 
 // ErrorHandler handles requests for users
@@ -20,5 +22,5 @@ func (h *Handler) AuthTest(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNotFound)
 
-	w.Write(JSONify(root))
+	w.Write(util.JSONify(root))
 }
