@@ -24,6 +24,59 @@ func New(r *mux.Router, db *sql.DB) *AdminHandler {
 	return &AdminHandler{r, db}
 }
 
+// RootHandler should take posts of articles and save them to the database
+// after checking for possible problems
+func (a *AdminHandler) RootHandler(w http.ResponseWriter, r *http.Request) {
+	root := hal.NewResourceObject()
+
+	self := hal.NewSelfLinkRelation()
+	self.SetLink(&hal.LinkObject{Href: r.URL.Path})
+
+	root.AddLink(self)
+
+	// Users
+	users, err := hal.NewLinkRelation("Users")
+
+	if err != nil {
+		// Error creating link relation
+		log.Println(err)
+		return
+	}
+
+	users.SetLink(&hal.LinkObject{Href: "/users/"})
+
+	root.AddLink(users)
+
+	// Article
+	article, err := hal.NewLinkRelation("Article")
+
+	if err != nil {
+		// Error creating link relation
+		log.Println(err)
+		return
+	}
+
+	article.SetLink(&hal.LinkObject{Href: "/article/"})
+
+	root.AddLink(article)
+
+	// Article Category
+	category, err := hal.NewLinkRelation("Article Category")
+
+	if err != nil {
+		// Error creating link relation
+		log.Println(err)
+		return
+	}
+
+	category.SetLink(&hal.LinkObject{Href: "/category/"})
+
+	root.AddLink(category)
+
+	// Write it out
+	w.Write(util.JSONify(root))
+}
+
 // ArticleHandler should take posts of articles and save them to the database
 // after checking for possible problems
 func (a *AdminHandler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +133,7 @@ func Start(db *sql.DB) {
 	r.HandleFunc("/user/", h.UserHandler)
 	r.HandleFunc("/category", h.CategoryHandler)
 	r.HandleFunc("/category/", h.CategoryHandler)
+	r.HandleFunc("/", h.RootHandler)
 
 	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 	// Firewall prevents access to this outside the network
