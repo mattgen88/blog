@@ -82,5 +82,6 @@ func Start(db *sql.DB) {
 	r.HandleFunc("/category/", h.CategoryHandler)
 
 	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
-	log.Fatal(http.ListenAndServe("127.0.0.1:8081", Gorilla.LoggingHandler(os.Stdout, r)))
+	// Firewall prevents access to this outside the network
+	log.Fatal(http.ListenAndServe("0.0.0.0:8081", Gorilla.LoggingHandler(os.Stdout, r)))
 }
