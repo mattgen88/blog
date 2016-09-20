@@ -1,8 +1,10 @@
 package util
 
 import (
-	"github.com/pmoule/go2hal/hal"
 	"log"
+	"net/http"
+
+	"github.com/pmoule/go2hal/hal"
 )
 
 // JSONify the resource
@@ -16,4 +18,13 @@ func JSONify(root hal.Resource) []byte {
 		return nil
 	}
 	return bytes
+}
+
+// ContentType sets the ContentType header to type
+func ContentType(next http.Handler, ctype string) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", ctype)
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
 }

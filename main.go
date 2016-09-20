@@ -16,6 +16,7 @@ import (
 	"github.com/mattgen88/blog/handlers"
 	"github.com/mattgen88/blog/middleware"
 	"github.com/mattgen88/blog/setup"
+	"github.com/mattgen88/blog/util"
 )
 
 func main() {
@@ -92,5 +93,5 @@ func main() {
 		admin.Start(db)
 	}()
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), Gorilla.LoggingHandler(os.Stdout, r)))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), util.ContentType(Gorilla.LoggingHandler(os.Stdout, r), "application/hal+json")))
 }

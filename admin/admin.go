@@ -2,6 +2,7 @@ package admin
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -11,22 +12,24 @@ import (
 	"github.com/pmoule/go2hal/hal"
 
 	"github.com/mattgen88/blog/handlers"
+	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/blog/util"
 )
 
 // Handler provides various http handlers
-type AdminHandler struct {
+type Handler struct {
 	r  *mux.Router
 	db *sql.DB
 }
 
-func New(r *mux.Router, db *sql.DB) *AdminHandler {
-	return &AdminHandler{r, db}
+// New returns a new instance of the AdminHandler
+func New(r *mux.Router, db *sql.DB) *Handler {
+	return &Handler{r, db}
 }
 
 // RootHandler should take posts of articles and save them to the database
 // after checking for possible problems
-func (a *AdminHandler) RootHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
 	self := hal.NewSelfLinkRelation()
@@ -56,7 +59,7 @@ func (a *AdminHandler) RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	article.SetLink(&hal.LinkObject{Href: "/article/"})
+	article.SetLink(&hal.LinkObject{Href: "/articles/{category}/{id:[a-zA-Z-_]+}"})
 
 	root.AddLink(article)
 
@@ -69,7 +72,7 @@ func (a *AdminHandler) RootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	category.SetLink(&hal.LinkObject{Href: "/category/"})
+	category.SetLink(&hal.LinkObject{Href: "/articles/{category}"})
 
 	root.AddLink(category)
 
@@ -79,7 +82,52 @@ func (a *AdminHandler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 // ArticleHandler should take posts of articles and save them to the database
 // after checking for possible problems
-func (a *AdminHandler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Set up our hal resource
+	root := hal.NewResourceObject()
+
+	link := &hal.LinkObject{Href: r.URL.Path}
+
+	self := hal.NewSelfLinkRelation()
+	self.SetLink(link)
+
+	root.AddLink(self)
+
+	// Get the slug of the post we're dealing with
+	slug := mux.Vars(r)["id"]
+
+	// Fetch the requested article
+	model := models.NewSQLArticle(slug, a.db)
+	model.Populate()
+
+	// Unpack posted data into model
+	err := json.NewDecoder(r.Body).Decode(&model)
+	if err != nil {
+		log.Println(err)
+		root.Data()["error"] = err
+	}
+
+	// Write the model out
+	root.Data()["title"] = model.Title
+	root.Data()["author"] = model.Author.Username
+	root.Data()["body"] = model.Body
+	root.Data()["slug"] = model.Slug
+	root.Data()["date"] = model.Date
+	root.Data()["id"] = model.ID
+	root.Data()["category"] = model.Category.Name
+
+	err = model.Save()
+	if err != nil {
+		root.Data()["error"] = err
+	}
+
+	w.Write(util.JSONify(root))
+}
+
+// CategoryHandler should take posts of categories and save them to the database
+// after checking for possible problems
+func (a *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -93,9 +141,8 @@ func (a *AdminHandler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(util.JSONify(root))
 }
 
-// CategoryHandler should take posts of categories and save them to the database
-// after checking for possible problems
-func (a *AdminHandler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
+// UserHandler allows for the modification of users
+func (a *Handler) UserHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -104,38 +151,51 @@ func (a *AdminHandler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
+	root.Data()["test"] = "testing"
 
 	w.Write(util.JSONify(root))
 }
 
-// CategoryHandler should take posts of users and save them to the database
-// after checking for possible problems
-func (a *AdminHandler) UserHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
-
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-
-	w.Write(util.JSONify(root))
-}
-
+// Start is called to configure and start the admin interface
 func Start(db *sql.DB) {
-	r := mux.NewRouter()
-	h := New(r, db)
+	router := mux.NewRouter()
+	h := New(router, db)
+	ro := handlers.New(router, db)
 
-	r.HandleFunc("/article", h.ArticleHandler)
-	r.HandleFunc("/article/", h.ArticleHandler)
-	r.HandleFunc("/user", h.UserHandler)
-	r.HandleFunc("/user/", h.UserHandler)
-	r.HandleFunc("/category", h.CategoryHandler)
-	r.HandleFunc("/category/", h.CategoryHandler)
-	r.HandleFunc("/", h.RootHandler)
+	var articleHandlers Gorilla.MethodHandler
+	articleHandlers = make(map[string]http.Handler)
+	articleHandlers["GET"] = http.HandlerFunc(ro.ArticleHandler)
+	articleHandlers["POST"] = http.HandlerFunc(h.ArticleHandler)
 
-	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
+	var categoryHandlers Gorilla.MethodHandler
+	categoryHandlers = make(map[string]http.Handler)
+	categoryHandlers["GET"] = http.HandlerFunc(ro.CategoryHandler)
+	categoryHandlers["POST"] = http.HandlerFunc(h.CategoryHandler)
+
+	var userHandlers Gorilla.MethodHandler
+	userHandlers = make(map[string]http.Handler)
+	userHandlers["GET"] = http.HandlerFunc(ro.UserHandler)
+	userHandlers["POST"] = http.HandlerFunc(h.UserHandler)
+
+	router.HandleFunc("/", h.RootHandler)
+
+	router.HandleFunc("/articles", ro.ArticleListHandler)
+	router.HandleFunc("/articles/", ro.ArticleListHandler)
+
+	router.Handle("/articles/{category}", categoryHandlers)
+	router.Handle("/articles/{category}/", categoryHandlers)
+
+	router.Handle("/articles/{category}/{id:[a-zA-Z-_]+}", articleHandlers)
+	router.Handle("/articles/{category}/{id:[a-zA-Z-_]+}/", articleHandlers)
+
+	router.HandleFunc("/users", ro.UsersListHandler)
+	router.HandleFunc("/users/", ro.UsersListHandler)
+
+	router.Handle("/users/{id:[a-zA-Z0-9]+}", userHandlers)
+	router.Handle("/users/{id:[a-zA-Z0-9]+}/", userHandlers)
+	//
+	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
+
 	// Firewall prevents access to this outside the network
-	log.Fatal(http.ListenAndServe("0.0.0.0:8081", Gorilla.LoggingHandler(os.Stdout, r)))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8081", util.ContentType(Gorilla.LoggingHandler(os.Stdout, router), "application/hal+json")))
 }

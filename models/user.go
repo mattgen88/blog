@@ -193,7 +193,7 @@ func (u *SQLUser) Populate() error {
 	// Fetch data and populate
 	err := u.db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
 	FROM Users
-	WHERE Username = ?`, u.Username).Scan(u.ID, u.Created, u.Realname, u.Email, u.Role)
+	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role)
 
 	if err != nil {
 		return errors.New("Unknown error occurred")

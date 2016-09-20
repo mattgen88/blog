@@ -17,23 +17,24 @@ type Article interface {
 	GetBody() string
 	GetDate() *time.Time
 	GetCategory() *SQLCategory
+	Save() error
 }
 
 // SQLArticle is a SQL backed Article
 type SQLArticle struct {
 	db        *sql.DB
-	ID        int
-	Author    *SQLUser
-	Title     string
-	Body      string
-	Date      *time.Time
-	Slug      string
-	Category  *SQLCategory
+	ID        int          `json:"id"`
+	Author    *SQLUser     `json:"author"`
+	Title     string       `json:"title"`
+	Body      string       `json:"body"`
+	Date      *time.Time   `json:"date"`
+	Slug      string       `json:"slug"`
+	Category  *SQLCategory `json:"category"`
 	populated bool
 	dirty     bool
 }
 
-// Return a new instance of SQLArticle backed by a database
+// NewSQLArticle returns a new instance of SQLArticle backed by a database
 func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	p := &SQLArticle{
 		Slug: slug,
@@ -47,6 +48,7 @@ func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 	return p
 }
 
+// ArticleListByCategory returns an article list by category, imagine that.
 func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
@@ -90,10 +92,10 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 	return articles
 }
 
+// ArticleList is a list of articles
 func ArticleList(db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
-	// @TODO: Move this off to the model...
 	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
 		FROM Articles
 		JOIN Category on Category.CategoryId = Articles.Category
@@ -205,7 +207,6 @@ func (p *SQLArticle) Exists() bool {
 		log.Println("Some other error", err)
 		return false
 	}
-	log.Println("Found " + p.Slug)
 	return true
 }
 
@@ -243,5 +244,29 @@ func (p *SQLArticle) Populate() error {
 	p.Category = NewSQLCategory(category, p.db)
 
 	p.populated = true
+	return nil
+}
+
+func (p *SQLArticle) Save() error {
+	var err error
+	var query string
+	if !p.Exists() {
+		log.Println("Creating new article")
+		query = "INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES (?, ?, ?, ?, ?, ?)"
+		_, err = p.db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
+	} else {
+		log.Println("Overwriting existing article")
+		query = "UPDATE Articles SET Title = ?, Author = ?, Body = ?, Date = ?, Slug = ?, Category = ? WHERE ArticleId = ?"
+		_, err = p.db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
+	}
+
+	if err != nil {
+		log.Println(err)
+		log.Println(query)
+		log.Println(p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
+		log.Printf("%+v", p.Author)
+		return err
+	}
+
 	return nil
 }
