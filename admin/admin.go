@@ -3,6 +3,7 @@ package admin
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -103,24 +104,31 @@ func (a *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Unpack posted data into model
 	err := json.NewDecoder(r.Body).Decode(&model)
+
 	if err != nil {
-		log.Println(err)
-		root.Data()["error"] = err
+		// parse error
+		root.Data()["error"] = ParseError
+		w.Write(util.JSONify(root))
+		return
+	}
+
+	err = model.Save()
+
+	if err != nil {
+		root.Data()["error"] = fmt.Sprintf("%s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(util.JSONify(root))
+		return
 	}
 
 	// Write the model out
 	root.Data()["title"] = model.Title
-	root.Data()["author"] = model.Author.Username
+	root.Data()["author"] = model.Author
 	root.Data()["body"] = model.Body
 	root.Data()["slug"] = model.Slug
 	root.Data()["date"] = model.Date
 	root.Data()["id"] = model.ID
-	root.Data()["category"] = model.Category.Name
-
-	err = model.Save()
-	if err != nil {
-		root.Data()["error"] = err
-	}
+	root.Data()["category"] = model.Category
 
 	w.Write(util.JSONify(root))
 }

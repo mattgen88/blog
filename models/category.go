@@ -11,13 +11,14 @@ import (
 type Category interface {
 	GetName() string
 	GetId() int
+	Populate() error
 }
 
 // SQLCategory is a Category backed by SQL
 type SQLCategory struct {
-	db        *sql.DB
-	ID        int
-	Name      string
+	ID        int     `json:"id,omitempty"`
+	Name      string  `json:"name"`
+	Db        *sql.DB `json:"-"`
 	populated bool
 	dirty     bool
 }
@@ -25,7 +26,7 @@ type SQLCategory struct {
 // NewSQLCategory creates a SQLCategory instance configured with a connection
 func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 	c := &SQLCategory{
-		db:   db,
+		Db:   db,
 		Name: name,
 	}
 
@@ -47,7 +48,7 @@ func (c *SQLCategory) GetID() int {
 // Exists check if the category exists
 func (c *SQLCategory) Exists() bool {
 	var count int
-	err := c.db.QueryRow(`SELECT COUNT(*)
+	err := c.Db.QueryRow(`SELECT COUNT(*)
 	FROM Category
 	WHERE Name = ?`, c.Name).Scan(&count)
 
@@ -75,7 +76,7 @@ func (c *SQLCategory) Populate() error {
 	}
 
 	// Fetch data and populate
-	err := c.db.QueryRow(`SELECT CategoryId
+	err := c.Db.QueryRow(`SELECT CategoryId
 	FROM Category
 	WHERE Name = ?`, c.Name).Scan(&c.ID)
 

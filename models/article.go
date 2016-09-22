@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"regexp"
 	"time"
 )
 
@@ -18,11 +19,11 @@ type Article interface {
 	GetDate() *time.Time
 	GetCategory() *SQLCategory
 	Save() error
+	Validate() error
 }
 
 // SQLArticle is a SQL backed Article
 type SQLArticle struct {
-	db        *sql.DB
 	ID        int          `json:"id"`
 	Author    *SQLUser     `json:"author"`
 	Title     string       `json:"title"`
@@ -30,15 +31,16 @@ type SQLArticle struct {
 	Date      *time.Time   `json:"date"`
 	Slug      string       `json:"slug"`
 	Category  *SQLCategory `json:"category"`
+	Db        *sql.DB      `json:"-"`
 	populated bool
 	dirty     bool
 }
 
 // NewSQLArticle returns a new instance of SQLArticle backed by a database
-func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
+func NewSQLArticle(slug string, Db *sql.DB) *SQLArticle {
 	p := &SQLArticle{
 		Slug: slug,
-		db:   db,
+		Db:   Db,
 	}
 
 	if p.Exists() {
@@ -49,10 +51,10 @@ func NewSQLArticle(slug string, db *sql.DB) *SQLArticle {
 }
 
 // ArticleListByCategory returns an article list by category, imagine that.
-func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
+func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
-	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
+	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
 		FROM Articles
 		JOIN Users on Users.UserId = Articles.Author
 		WHERE Articles.Category = ?`, categoryId)
@@ -78,12 +80,12 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 		}
 
 		article := &SQLArticle{
-			db:     db,
+			Db:     Db,
 			ID:     articleId,
 			Title:  title,
 			Slug:   slug,
 			Date:   date,
-			Author: NewSQLUser(author, db),
+			Author: NewSQLUser(author, Db),
 		}
 
 		articles = append(articles, article)
@@ -93,10 +95,10 @@ func ArticleListByCategory(categoryId int, db *sql.DB) []*SQLArticle {
 }
 
 // ArticleList is a list of articles
-func ArticleList(db *sql.DB) []*SQLArticle {
+func ArticleList(Db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
-	rows, err := db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
+	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
 		FROM Articles
 		JOIN Category on Category.CategoryId = Articles.Category
 		JOIN Users on Users.UserId = Articles.Author`)
@@ -124,14 +126,14 @@ func ArticleList(db *sql.DB) []*SQLArticle {
 		}
 
 		article := &SQLArticle{
-			db:       db,
+			Db:       Db,
 			ID:       articleId,
 			Title:    title,
 			Slug:     slug,
 			Body:     body,
 			Date:     date,
-			Category: NewSQLCategory(category, db),
-			Author:   NewSQLUser(author, db),
+			Category: NewSQLCategory(category, Db),
+			Author:   NewSQLUser(author, Db),
 		}
 
 		articles = append(articles, article)
@@ -197,7 +199,7 @@ func (p *SQLArticle) GetCategory() *SQLCategory {
 // Exists determines whether or not the given post, by slug, exists
 func (p *SQLArticle) Exists() bool {
 	var count int
-	err := p.db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
+	err := p.Db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -229,7 +231,7 @@ func (p *SQLArticle) Populate() error {
 		category string
 	)
 
-	err := p.db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Name
+	err := p.Db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Name
 	FROM Articles
 	JOIN Category ON Articles.Category = Category.CategoryID
 	JOIN Users ON Articles.Author = Users.UserId
@@ -240,32 +242,56 @@ func (p *SQLArticle) Populate() error {
 		return errors.New("Unknown error occurred")
 	}
 
-	p.Author = NewSQLUser(author, p.db)
-	p.Category = NewSQLCategory(category, p.db)
+	p.Author = NewSQLUser(author, p.Db)
+	p.Category = NewSQLCategory(category, p.Db)
 
 	p.populated = true
 	return nil
 }
 
+// Save the properties of the article into the database
 func (p *SQLArticle) Save() error {
 	var err error
 	var query string
+
+	err = p.Validate()
+	if err != nil {
+		// Validation error
+		return err
+	}
 	if !p.Exists() {
 		log.Println("Creating new article")
 		query = "INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES (?, ?, ?, ?, ?, ?)"
-		_, err = p.db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
+		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
 	} else {
 		log.Println("Overwriting existing article")
 		query = "UPDATE Articles SET Title = ?, Author = ?, Body = ?, Date = ?, Slug = ?, Category = ? WHERE ArticleId = ?"
-		_, err = p.db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
+		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
 	}
 
 	if err != nil {
-		log.Println(err)
-		log.Println(query)
-		log.Println(p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
-		log.Printf("%+v", p.Author)
-		return err
+		return SaveError
+	}
+
+	return nil
+}
+
+// Validate the properties of model
+func (p *SQLArticle) Validate() error {
+	// Check each of the properties and validate them
+	p.Category.Db = p.Db
+	p.Category.Populate()
+	p.Author.Db = p.Db
+	p.Author.Populate()
+	match, _ := regexp.MatchString(`/^
+	  [a-z0-9]+   # One or more repetition of given characters
+	    (?:         # A non-capture group.
+	    -           # A hyphen
+	    [a-z0-9]+   # One or more repetition of given characters
+	  )*          # Zero or more repetition of previous group
+	   $/`, p.Slug)
+	if !match {
+		return ValidationError
 	}
 
 	return nil

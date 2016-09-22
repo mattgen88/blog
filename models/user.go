@@ -29,14 +29,14 @@ type User interface {
 
 // SQLUser is a SQL based User model
 type SQLUser struct {
-	db            *sql.DB
-	ID            int
-	Username      string
+	Db            *sql.DB    `json:"-"`
+	ID            int        `json:"id,omitempty"`
+	Username      string     `json:"username"`
+	Realname      string     `json:"realname,omitempty"`
+	Role          string     `json:"role,omitempty"`
+	Created       *time.Time `json:"created,omitempty"`
+	Email         string     `json:"email,omitempty"`
 	pwhash        string
-	Realname      string
-	Role          string
-	Created       *time.Time
-	Email         string
 	authenticated bool
 	dirty         bool
 	populated     bool
@@ -45,7 +45,7 @@ type SQLUser struct {
 // NewSQLUser Creates a User model
 func NewSQLUser(username string, db *sql.DB) *SQLUser {
 	u := &SQLUser{
-		db:       db,
+		Db:       db,
 		Username: username,
 	}
 
@@ -138,7 +138,7 @@ func (u *SQLUser) SetEmail(email string) {
 // Exists Checks if the user exists
 func (u *SQLUser) Exists() bool {
 	var count int
-	err := u.db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
+	err := u.Db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -191,7 +191,7 @@ func (u *SQLUser) Populate() error {
 	}
 
 	// Fetch data and populate
-	err := u.db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
+	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
 	FROM Users
 	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role)
 
