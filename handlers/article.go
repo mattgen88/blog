@@ -27,7 +27,7 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, article := range models.ArticleList(h.db) {
 
-		href := fmt.Sprintf("/articles/%s/%s", article.Category.Name, article.Slug)
+		href := fmt.Sprintf("/articles/%s", article.Slug)
 		selfLink, err := hal.NewLinkObject(href)
 
 		if err != nil {
@@ -77,7 +77,6 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	self.SetLink(link)
 
 	root.AddLink(self)
-	// root.Data()["category"] = mux.Vars(r)["category"]
 	root.Data()["id"] = mux.Vars(r)["id"]
 	root.Data()["body"] = article.GetBody()
 	root.Data()["title"] = article.Title

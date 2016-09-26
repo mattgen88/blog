@@ -35,7 +35,7 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, article := range categories {
 
-		href := fmt.Sprintf("/articles/%s/%s", c, article.Slug)
+		href := fmt.Sprintf("/articles/%s", c, article.Slug)
 		selfLink, err := hal.NewLinkObject(href)
 
 		if err != nil {

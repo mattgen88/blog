@@ -72,11 +72,11 @@ func main() {
 	r.HandleFunc("/articles", h.ArticleListHandler)
 	r.HandleFunc("/articles/", h.ArticleListHandler)
 
-	r.HandleFunc("/articles/{category}", h.CategoryHandler)
-	r.HandleFunc("/articles/{category}/", h.CategoryHandler)
+	r.HandleFunc("/categories/{category}", h.CategoryHandler)
+	r.HandleFunc("/categories/{category}/", h.CategoryHandler)
 
-	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}", h.ArticleHandler)
-	r.HandleFunc("/articles/{category}/{id:[a-zA-Z-_]+}/", h.ArticleHandler)
+	r.HandleFunc("/articles/{id:[a-zA-Z-_]+}", h.ArticleHandler)
+	r.HandleFunc("/articles/{id:[a-zA-Z-_]+}/", h.ArticleHandler)
 
 	r.HandleFunc("/users", h.UsersListHandler)
 	r.HandleFunc("/users/", h.UsersListHandler)

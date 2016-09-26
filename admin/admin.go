@@ -81,9 +81,9 @@ func (a *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(util.JSONify(root))
 }
 
-// ArticleHandler should take posts of articles and save them to the database
+// ReplaceArticleHandler should take posts of articles and save them to the database
 // after checking for possible problems
-func (a *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Handler) ReplaceArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set up our hal resource
 	root := hal.NewResourceObject()
@@ -133,9 +133,9 @@ func (a *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(util.JSONify(root))
 }
 
-// CategoryHandler should take posts of categories and save them to the database
+// ReplaceCategoryHandler should take posts of categories and save them to the database
 // after checking for possible problems
-func (a *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Handler) ReplaceCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	root := hal.NewResourceObject()
 
 	link := &hal.LinkObject{Href: r.URL.Path}
@@ -173,12 +173,12 @@ func Start(db *sql.DB) {
 	var articleHandlers Gorilla.MethodHandler
 	articleHandlers = make(map[string]http.Handler)
 	articleHandlers["GET"] = http.HandlerFunc(ro.ArticleHandler)
-	articleHandlers["POST"] = http.HandlerFunc(h.ArticleHandler)
+	articleHandlers["POST"] = http.HandlerFunc(h.ReplaceArticleHandler)
 
 	var categoryHandlers Gorilla.MethodHandler
 	categoryHandlers = make(map[string]http.Handler)
 	categoryHandlers["GET"] = http.HandlerFunc(ro.CategoryHandler)
-	categoryHandlers["POST"] = http.HandlerFunc(h.CategoryHandler)
+	categoryHandlers["POST"] = http.HandlerFunc(h.ReplaceCategoryHandler)
 
 	var userHandlers Gorilla.MethodHandler
 	userHandlers = make(map[string]http.Handler)
@@ -190,11 +190,11 @@ func Start(db *sql.DB) {
 	router.HandleFunc("/articles", ro.ArticleListHandler)
 	router.HandleFunc("/articles/", ro.ArticleListHandler)
 
-	router.Handle("/articles/{category}", categoryHandlers)
-	router.Handle("/articles/{category}/", categoryHandlers)
+	router.Handle("/categories/{category}", categoryHandlers)
+	router.Handle("/categories/{category}/", categoryHandlers)
 
-	router.Handle("/articles/{category}/{id:[a-zA-Z-_]+}", articleHandlers)
-	router.Handle("/articles/{category}/{id:[a-zA-Z-_]+}/", articleHandlers)
+	router.Handle("/articles/{id:[a-zA-Z-_]+}", articleHandlers)
+	router.Handle("/articles/{id:[a-zA-Z-_]+}/", articleHandlers)
 
 	router.HandleFunc("/users", ro.UsersListHandler)
 	router.HandleFunc("/users/", ro.UsersListHandler)
