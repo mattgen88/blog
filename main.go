@@ -14,8 +14,8 @@ import (
 
 	"github.com/mattgen88/blog/admin"
 	"github.com/mattgen88/blog/handlers"
+	"github.com/mattgen88/blog/internal/setup"
 	"github.com/mattgen88/blog/middleware"
-	"github.com/mattgen88/blog/setup"
 	"github.com/mattgen88/blog/util"
 )
 
@@ -71,6 +71,9 @@ func main() {
 
 	r.HandleFunc("/articles", h.ArticleListHandler)
 	r.HandleFunc("/articles/", h.ArticleListHandler)
+
+	r.HandleFunc("/categories", h.CategoryListHandler)
+	r.HandleFunc("/categories/", h.CategoryListHandler)
 
 	r.HandleFunc("/categories/{category}", h.CategoryHandler)
 	r.HandleFunc("/categories/{category}/", h.CategoryHandler)

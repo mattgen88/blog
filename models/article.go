@@ -260,11 +260,9 @@ func (p *SQLArticle) Save() error {
 		return err
 	}
 	if !p.Exists() {
-		log.Println("Creating new article")
 		query = "INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES (?, ?, ?, ?, ?, ?)"
 		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
 	} else {
-		log.Println("Overwriting existing article")
 		query = "UPDATE Articles SET Title = ?, Author = ?, Body = ?, Date = ?, Slug = ?, Category = ? WHERE ArticleId = ?"
 		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
 	}
