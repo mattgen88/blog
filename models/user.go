@@ -19,12 +19,6 @@ type User interface {
 	IsAuthenticated() bool
 	HasRole(string)
 	Populate() error
-	GetRealname() string
-	GetRole() string
-	GetEmail() string
-	GetCreated() *time.Time
-	GetUsername() string
-	GetID() int
 }
 
 // SQLUser is a SQL based User model
@@ -40,6 +34,7 @@ type SQLUser struct {
 	authenticated bool
 	dirty         bool
 	populated     bool
+	exists        bool
 }
 
 // NewSQLUser Creates a User model
@@ -54,60 +49,6 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 	}
 
 	return u
-}
-
-// GetRealname returns the real name of the user
-func (u *SQLUser) GetRealname() string {
-	if u.populated {
-		return u.Realname
-	}
-
-	return ""
-}
-
-// GetRole returns the roles for the user
-func (u *SQLUser) GetRole() string {
-	if u.populated {
-		return u.Role
-	}
-
-	return ""
-}
-
-// GetEmail returns the email
-func (u *SQLUser) GetEmail() string {
-	if u.populated {
-		return u.Email
-	}
-
-	return ""
-}
-
-// GetCreated returns the time it was created
-func (u *SQLUser) GetCreated() *time.Time {
-	if u.populated {
-		return u.Created
-	}
-
-	return nil
-}
-
-// GetUsername returns the username
-func (u *SQLUser) GetUsername() string {
-	if u.populated {
-		return u.Username
-	}
-
-	return ""
-}
-
-// GetID returns the user's ID
-func (u *SQLUser) GetID() int {
-	if u.populated {
-		return u.ID
-	}
-
-	return -1
 }
 
 // SetPassword sets the password of the user
@@ -137,6 +78,9 @@ func (u *SQLUser) SetEmail(email string) {
 
 // Exists Checks if the user exists
 func (u *SQLUser) Exists() bool {
+	if u.exists {
+		return true
+	}
 	var count int
 	err := u.Db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
 
@@ -144,9 +88,10 @@ func (u *SQLUser) Exists() bool {
 		if err == sql.ErrNoRows {
 			return false
 		}
+		return false
 	}
-
-	return true
+	u.exists = count > 0
+	return count > 0
 }
 
 // Authenticate authenticates the user

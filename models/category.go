@@ -11,8 +11,6 @@ import (
 
 // Category in an interface for categories
 type Category interface {
-	GetName() string
-	GetId() int
 	Populate() error
 	Save() error
 	Validate() error
@@ -25,6 +23,7 @@ type SQLCategory struct {
 	Db        *sql.DB `json:"-"`
 	populated bool
 	dirty     bool
+	exists    bool
 }
 
 // NewSQLCategory creates a SQLCategory instance configured with a connection
@@ -79,13 +78,11 @@ func CategoryList(Db *sql.DB) []*SQLCategory {
 	return categories
 }
 
-// GetID returns the ID of a category
-func (c *SQLCategory) GetID() int {
-	return c.ID
-}
-
 // Exists check if the category exists
 func (c *SQLCategory) Exists() bool {
+	if c.exists {
+		return true
+	}
 	var count int
 	err := c.Db.QueryRow(`SELECT COUNT(*)
 	FROM Category
@@ -95,9 +92,10 @@ func (c *SQLCategory) Exists() bool {
 		if err == sql.ErrNoRows {
 			return false
 		}
+		return false
 	}
-
-	return true
+	c.exists = count > 0
+	return count > 0
 }
 
 // Populate the model with data from the database

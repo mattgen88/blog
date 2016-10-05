@@ -76,9 +76,10 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	self := hal.NewSelfLinkRelation()
 	self.SetLink(link)
 
+	root.Data()["article"] = article
+
 	root.AddLink(self)
-	root.Data()["id"] = mux.Vars(r)["id"]
-	root.Data()["body"] = article.GetBody()
+	root.Data()["body"] = article.Body
 	root.Data()["title"] = article.Title
 	root.Data()["author"] = article.Author.Username
 	root.Data()["date"] = article.Date

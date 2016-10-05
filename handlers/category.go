@@ -27,9 +27,9 @@ func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	category := models.NewSQLCategory(c, h.db)
 
-	root.Data()["id"] = category.GetID()
+	root.Data()["id"] = category.ID
 
-	categories := models.ArticleListByCategory(category.GetID(), h.db)
+	categories := models.ArticleListByCategory(category.ID, h.db)
 
 	var embeddedArticles []hal.Resource
 

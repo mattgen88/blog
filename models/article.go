@@ -12,12 +12,6 @@ import (
 type Article interface {
 	Exists() bool
 	Populate() error
-	GetSlug() string
-	GetAuthor() *User
-	GetTitle() string
-	GetBody() string
-	GetDate() *time.Time
-	GetCategory() *SQLCategory
 	Save() error
 	Validate() error
 }
@@ -34,6 +28,7 @@ type SQLArticle struct {
 	Db        *sql.DB      `json:"-"`
 	populated bool
 	dirty     bool
+	exists    bool
 }
 
 // NewSQLArticle returns a new instance of SQLArticle backed by a database
@@ -75,7 +70,6 @@ func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
 		)
 
 		if err := rows.Scan(&articleId, &title, &slug, &date, &author); err != nil {
-			log.Println(err)
 			continue
 		}
 
@@ -121,7 +115,6 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 		)
 
 		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category, &body); err != nil {
-			log.Println(err)
 			continue
 		}
 
@@ -142,74 +135,21 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 	return articles
 }
 
-// GetAuthor returns the User who authored the post
-func (p *SQLArticle) GetAuthor() *SQLUser {
-	if p.populated {
-		return p.Author
-	}
-
-	return nil
-}
-
-// GetTitle returns the title of the post
-func (p *SQLArticle) GetTitle() string {
-	if p.populated {
-		return p.Title
-	}
-
-	return ""
-}
-
-// GetBody returns the body of the post
-func (p *SQLArticle) GetBody() string {
-	if p.populated {
-		return p.Body
-	}
-
-	return ""
-}
-
-// GetDate returns the date the post was authored
-func (p *SQLArticle) GetDate() *time.Time {
-	if p.populated {
-		return p.Date
-	}
-
-	return nil
-}
-
-// GetSlug returns the post's slug to uniquely identify it in URLs
-func (p *SQLArticle) GetSlug() string {
-	if p.populated {
-		return p.Slug
-	}
-
-	return ""
-}
-
-// GetCategory returns the Category for the post
-func (p *SQLArticle) GetCategory() *SQLCategory {
-	if p.populated {
-		return p.Category
-	}
-
-	return nil
-}
-
 // Exists determines whether or not the given post, by slug, exists
 func (p *SQLArticle) Exists() bool {
+	if p.exists {
+		return true
+	}
 	var count int
 	err := p.Db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
-	log.Println(count)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Println("No rows for slug " + p.Slug)
-			return true
+			return false
 		}
-		log.Println("Some other error", err)
 		return false
 	}
-	return false
+	p.exists = count > 0
+	return count > 0
 }
 
 // Populate populates the model with data from the database
@@ -238,6 +178,7 @@ func (p *SQLArticle) Populate() error {
 	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
+		log.Println("Item does not exist")
 		return DNEError
 	}
 
