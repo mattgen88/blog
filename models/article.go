@@ -200,16 +200,16 @@ func (p *SQLArticle) GetCategory() *SQLCategory {
 func (p *SQLArticle) Exists() bool {
 	var count int
 	err := p.Db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
-
+	log.Println(count)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows for slug " + p.Slug)
-			return false
+			return true
 		}
 		log.Println("Some other error", err)
 		return false
 	}
-	return true
+	return false
 }
 
 // Populate populates the model with data from the database
@@ -238,8 +238,7 @@ func (p *SQLArticle) Populate() error {
 	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
-		log.Println("Unknown error", err)
-		return errors.New("Unknown error occurred")
+		return DNEError
 	}
 
 	p.Author = NewSQLUser(author, p.Db)
@@ -261,7 +260,12 @@ func (p *SQLArticle) Save() error {
 	}
 	if !p.Exists() {
 		query = "INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES (?, ?, ?, ?, ?, ?)"
-		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
+		result, err := p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
+		id, err := result.LastInsertId()
+		if err != nil {
+			return SaveError
+		}
+		p.ID = int(id)
 	} else {
 		query = "UPDATE Articles SET Title = ?, Author = ?, Body = ?, Date = ?, Slug = ?, Category = ? WHERE ArticleId = ?"
 		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
@@ -274,6 +278,8 @@ func (p *SQLArticle) Save() error {
 	return nil
 }
 
+var slugRegexp = regexp.MustCompile(`[[:alpha:]]+`)
+
 // Validate the properties of model
 func (p *SQLArticle) Validate() error {
 	// Check each of the properties and validate them
@@ -281,14 +287,13 @@ func (p *SQLArticle) Validate() error {
 	p.Category.Populate()
 	p.Author.Db = p.Db
 	p.Author.Populate()
-	match, _ := regexp.MatchString(`/^
-	  [a-z0-9]+   # One or more repetition of given characters
-	    (?:         # A non-capture group.
-	    -           # A hyphen
-	    [a-z0-9]+   # One or more repetition of given characters
-	  )*          # Zero or more repetition of previous group
-	   $/`, p.Slug)
+	match := slugRegexp.MatchString("test")
+	if match {
+		log.Println("Success!")
+	}
+	match = slugRegexp.MatchString(p.Slug)
 	if !match {
+		log.Println("Failed to pass regex", p.Slug)
 		return ValidationError
 	}
 
