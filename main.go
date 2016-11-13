@@ -15,7 +15,6 @@ import (
 	"github.com/mattgen88/blog/admin"
 	"github.com/mattgen88/blog/handlers"
 	"github.com/mattgen88/blog/internal/setup"
-	"github.com/mattgen88/blog/middleware"
 	"github.com/mattgen88/blog/util"
 )
 
@@ -86,8 +85,6 @@ func main() {
 
 	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}", h.UserHandler)
 	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}/", h.UserHandler)
-
-	r.Handle("/authtest", middleware.AuthHandler(http.HandlerFunc(h.AuthTest)))
 
 	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
