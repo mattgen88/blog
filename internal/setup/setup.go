@@ -161,11 +161,12 @@ instructions and you will have working blog.`)
 	}
 
 	u := models.NewSQLUser(username, db)
-	pwhash := u.SetPassword(strings.TrimSpace(string(password)))
+	u.SetPassword(strings.TrimSpace(string(password)))
 	u.SetRealName(realname)
 	u.SetEmail(email)
+	u.SetRole("admin")
+	err = u.Save()
 
-	_, err = db.Exec(userTableInsert, u.Username, pwhash, u.Realname, u.Email, u.Role)
 	if err != nil {
 		log.Println(err)
 		return

@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"fmt"
 
 	Gorilla "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	"github.com/mattgen88/blog/handlers"
 	"github.com/mattgen88/blog/util"
@@ -17,17 +19,36 @@ import (
 type Handler struct {
 	r  *mux.Router
 	db *sql.DB
+	jwtKey string
 }
 
 // New returns a new instance of the AdminHandler
-func New(r *mux.Router, db *sql.DB) *Handler {
-	return &Handler{r, db}
+func New(r *mux.Router, db *sql.DB, jwtKey string) *Handler {
+	return &Handler{r, db, jwtKey}
 }
 
 // Start is called to configure and start the admin interface
 func Start(db *sql.DB) {
+	// Set configuration file information
+	viper.SetConfigName("config")
+	viper.AddConfigPath("/etc/blog/")
+	viper.AddConfigPath(".")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("Error loading config /etc/blog/config: %s", err)
+	}
+
+	viper.SetDefault("adminPort", 9001)
+	adminPort := viper.GetInt("adminPort")
+
+	viper.SetDefault("adminHost", "127.0.0.1")
+	adminHost := viper.GetString("adminHost")
+
+	jwtKey := viper.GetString("jwtKey")
+
 	router := mux.NewRouter()
-	h := New(router, db)
+	h := New(router, db, jwtKey)
 	ro := handlers.New(router, db)
 
 	var articleHandlers Gorilla.MethodHandler
@@ -79,9 +100,12 @@ func Start(db *sql.DB) {
 
 	router.Handle("/users/{id:[a-zA-Z0-9]+}", userHandlers)
 	router.Handle("/users/{id:[a-zA-Z0-9]+}/", userHandlers)
-	//
+
+	router.Handle("/auth",  http.HandlerFunc(h.Auth))
+	router.Handle("/auth/",  http.HandlerFunc(h.Auth))
+	router.Handle("/authtest", AuthMiddleware(http.HandlerFunc(h.AuthTest), jwtKey))
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
 	// Firewall prevents access to this outside the network
-	log.Fatal(http.ListenAndServe("0.0.0.0:8081", util.ContentType(Gorilla.LoggingHandler(os.Stdout, router), "application/hal+json")))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", adminHost, adminPort), util.ContentType(Gorilla.LoggingHandler(os.Stdout, router), "application/hal+json")))
 }

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+
 // User is a user in the system
 type User interface {
 	SetPassword(string) string
@@ -19,6 +20,8 @@ type User interface {
 	IsAuthenticated() bool
 	HasRole(string)
 	Populate() error
+	Save() error
+	Validate() error
 }
 
 // SQLUser is a SQL based User model
@@ -53,6 +56,7 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 
 // SetPassword sets the password of the user
 func (u *SQLUser) SetPassword(pw string) string {
+	log.Println("Setting password to " + pw)
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 
 	if err != nil {
@@ -96,11 +100,15 @@ func (u *SQLUser) Exists() bool {
 
 // Authenticate authenticates the user
 func (u *SQLUser) Authenticate(pw string) bool {
+	log.Println("Testing if " + pw + " hashes to " + u.pwhash)
 	if !u.populated {
 		return false
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(u.pwhash), []byte(pw))
+	if err != nil {
+		log.Println("mismatched hashing")
+	}
 	return err == nil
 }
 
@@ -121,29 +129,83 @@ func (u *SQLUser) HasRole(role string) bool {
 
 // Populate Fetches data and populates struct
 func (u *SQLUser) Populate() error {
+	log.Println("check if exists")
+
 	if !u.Exists() {
 		return errors.New("Instance does not exist")
 	}
-
-	if u.populated {
-		// Don't repopulate a populated model
-		return errors.New("Model already populated")
-	}
+	log.Println("exists")
+	log.Println("check if dirty")
 
 	if u.dirty {
 		// Don't populate a dirty model
 		return errors.New("Model dirty")
 	}
+	log.Println("not dirty")
 
 	// Fetch data and populate
-	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role
+	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role, Hash
 	FROM Users
-	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role)
+	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
+	log.Println("check for errors querying")
 
 	if err != nil {
+		log.Println(err)
 		return errors.New("Unknown error occurred")
 	}
+	log.Println("no errors")
 
 	u.populated = true
+	return nil
+}
+
+func (u *SQLUser) Save() error {
+	var err error
+	var query string
+
+	err = u.Validate()
+	if err != nil {
+		// Validation error
+		return err
+	}
+	if !u.Exists() {
+		query = `INSERT INTO Users (
+			Username,
+			Hash,
+			RealName,
+			Email,
+			Created,
+			Role
+		) VALUES (
+			?,
+			?,
+			?,
+			?,
+			CURRENT_TIMESTAMP,
+			(
+				SELECT RoleID
+				FROM Role
+				WHERE Name = ?
+			)
+		);`
+		result, err := u.Db.Exec(query, u.Username, u.pwhash, u.Realname, u.Email, "user")
+		id, err := result.LastInsertId()
+		if err != nil {
+			return SaveError
+		}
+		u.ID = int(id)
+	} else {
+		query = `UPDATE Users SET Hash = ?, RealName = ?, Email = ?, Role = ? WHERE UserID = ?`
+		_, err = u.Db.Exec(query, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
+	}
+
+	if err != nil {
+		return SaveError
+	}
+
+	return nil
+}
+
+func (u *SQLUser) Validate() error {
 	return nil
 }

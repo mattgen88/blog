@@ -1,0 +1,137 @@
+{
+	"ImportPath": "github.com/mattgen88/blog",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
+	"Deps": [
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.2.0-9-gf0aeabc",
+			"Rev": "f0aeabca5a127c4078abb8c8d64298b147264b55"
+		},
+		{
+			"ImportPath": "github.com/dgrijalva/jwt-go",
+			"Comment": "v3.0.0-10-g9ed569b",
+			"Rev": "9ed569b5d1ac936e6494082958d63a6aa4fff99a"
+		},
+		{
+			"ImportPath": "github.com/fsnotify/fsnotify",
+			"Comment": "v1.3.0",
+			"Rev": "30411dbcefb7a1da7e84f75530ad3abe4011b4f8"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Comment": "v1.1-2-ga8d44e7",
+			"Rev": "a8d44e7d8e4d532b6a27a02dd82abb31cc1b01bd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/handlers",
+			"Comment": "v1.1-6-g66e6c6f",
+			"Rev": "66e6c6f01d8da976ee113437745ca029c2b585a6"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.1-7-g9c19ed5",
+			"Rev": "9c19ed558d5df4da88e2ade9c8940d742aef0e7e"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/parser",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/token",
+			"Rev": "9a905a34e6280ce905da1a32344b25e81011197a"
+		},
+		{
+			"ImportPath": "github.com/howeyc/gopass",
+			"Rev": "66487b23f2880ba32e185121d2cd51a338ea069a"
+		},
+		{
+			"ImportPath": "github.com/magiconair/properties",
+			"Comment": "v1.7.0",
+			"Rev": "c265cfa48dda6474e208715ca93e987829f572f8"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.1.0-69-g38ee283",
+			"Rev": "38ee283dabf11c9cbdb968eebd79b1fa7acbabe6"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "d2dd0262208475919e1a362f675cfc0e7c10e905"
+		},
+		{
+			"ImportPath": "github.com/pmoule/go2hal/hal",
+			"Comment": "v0.2.0-5-geadee83",
+			"Rev": "eadee83b2a593eecdb3b68fbca961a488eca4961"
+		},
+		{
+			"ImportPath": "github.com/pmoule/go2hal/hal/relationtype",
+			"Comment": "v0.2.0-5-geadee83",
+			"Rev": "eadee83b2a593eecdb3b68fbca961a488eca4961"
+		},
+		{
+			"ImportPath": "github.com/spf13/cast",
+			"Rev": "27b586b42e29bec072fe7379259cc719e1289da6"
+		},
+		{
+			"ImportPath": "github.com/spf13/jwalterweatherman",
+			"Rev": "33c24e77fb80341fe7130ee7c594256ff08ccc46"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "cb88ea77998c3f024757528e3305022ab50b43be"
+		},
+		{
+			"ImportPath": "github.com/spf13/viper",
+			"Rev": "d8a428b8a30606e1d0b355d91edf282609ade1a6"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/bcrypt",
+			"Rev": "b6789ab629056511030d652d851e7dc10c9e9c9e"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "b6789ab629056511030d652d851e7dc10c9e9c9e"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh/terminal",
+			"Rev": "b6789ab629056511030d652d851e7dc10c9e9c9e"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "33267e036fd93fcd26ea95b7bdaf2d8306cb743c"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "a83829b6f1293c91addabc89d0571c246397bbf4"
+		}
+	]
+}
