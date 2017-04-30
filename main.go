@@ -23,6 +23,7 @@ func main() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/blog/")
 	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
 	if err != nil {

@@ -9,7 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 // User is a user in the system
 type User interface {
 	SetPassword(string) string

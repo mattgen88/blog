@@ -1,92 +1,98 @@
 package admin
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
-  "time"
-  "fmt"
-  "log"
-	"github.com/pmoule/go2hal/hal"
-  "github.com/dgrijalva/jwt-go"
+	"time"
 
-	"github.com/mattgen88/blog/util"
-  "github.com/mattgen88/blog/models"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/mattgen88/blog/models"
+	"github.com/mattgen88/haljson"
 )
 
+// AuthClaims jwt claims
 type AuthClaims struct {
-  Username string `json:"username"`
-  Role string `json:"role"`
-  jwt.StandardClaims
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	jwt.StandardClaims
 }
 
-// AuthHandler handles request to authenticate and will issue a JWT
+// Auth handles request to authenticate and will issue a JWT
 func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
-  // @TODO look at r.Method for GET vs POST and provide some information about correctly authenticating
-	root := hal.NewResourceObject()
+	log.Println("auth request received", r.FormValue("username"))
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
 
-	link := &hal.LinkObject{Href: r.URL.Path}
+	// @TODO look at r.Method for GET vs POST and provide some information about correctly authenticating
 
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
+	model := models.NewSQLUser(r.FormValue("username"), h.db)
+	err := model.Populate()
+	if err != nil || !model.Authenticate(r.FormValue("password")) {
+		w.WriteHeader(http.StatusForbidden)
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
+		return
+	}
 
-	root.AddLink(self)
+	now := time.Now()
+	expires := now.Add(time.Minute * 5)
 
-  model := models.NewSQLUser(r.FormValue("username"), h.db)
-  err := model.Populate()
-  if err != nil || !model.Authenticate(r.FormValue("password")) {
-    w.WriteHeader(http.StatusForbidden)
-    w.Write(util.JSONify(root))
-    return
-  }
+	// Create the Claims
+	claims := AuthClaims{
+		model.Username,
+		model.Role,
+		jwt.StandardClaims{
+			ExpiresAt: expires.Unix(),
+			Issuer:    "test",
+		},
+	}
 
-  now := time.Now()
-  expires := now.Add(time.Minute*5)
+	// Create a new token object, specifying signing method and the claims
+	// you would like it to contain.
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-  // Create the Claims
-  claims := AuthClaims{
-      model.Username,
-      model.Role,
-      jwt.StandardClaims{
-          ExpiresAt: expires.Unix(),
-          Issuer:    "test",
-      },
-  }
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString([]byte(h.jwtKey))
+	if err != nil {
+		root.Data["err"] = fmt.Sprintf("%s", err)
+	} else {
+		root.Data["jwt"] = tokenString
+		cookie := http.Cookie{
+			Name:     "jwt",
+			Value:    tokenString,
+			Secure:   true,
+			HttpOnly: true,
+			Expires:  expires,
+		}
+		http.SetCookie(w, &cookie)
+	}
 
-  // Create a new token object, specifying signing method and the claims
-  // you would like it to contain.
-  token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-  // Sign and get the complete encoded token as a string using the secret
-  tokenString, err := token.SignedString([]byte(h.jwtKey))
-  if err != nil {
-    root.Data()["err"] = fmt.Sprintf("%s", err)
-  } else {
-    root.Data()["jwt"] = tokenString
-    cookie := http.Cookie{
-      Name: "jwt",
-      Value: tokenString,
-      Secure: true,
-      HttpOnly: true,
-      Expires: expires,
-    }
-    http.SetCookie(w, &cookie)
-  }
-  w.Write(util.JSONify(root))
-
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
 
 // AuthTest tests auth
 func (h *Handler) AuthTest(w http.ResponseWriter, r *http.Request) {
-  log.Println("Entered auth test")
-	root := hal.NewResourceObject()
+	log.Println("Entered auth test")
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
+	root.Data["test"] = "create user"
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-
-  root.Data()["test"] = "success"
-  w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 
 }

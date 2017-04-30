@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	// "github.com/gorilla/context"
 )
 
 func AuthHandler(handler http.Handler) http.Handler {

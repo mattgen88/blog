@@ -3,35 +3,34 @@ package admin
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/pmoule/go2hal/hal"
 
 	"github.com/mattgen88/blog/models"
-	"github.com/mattgen88/blog/util"
+	"github.com/mattgen88/haljson"
 )
 
 // CreateCategoryHandler allows for creating new categories
 func (a *Handler) CreateCategoryHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
+	root.Data["test"] = "create category"
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-	root.Data()["test"] = "testing"
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
 
 // ReplaceCategoryHandler should take posts of categories and save them to the database
 // after checking for possible problems
 func (a *Handler) ReplaceCategoryHandler(w http.ResponseWriter, r *http.Request) {
 	// Set up our hal resource
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
 
 	category := mux.Vars(r)["category"]
 
@@ -44,30 +43,40 @@ func (a *Handler) ReplaceCategoryHandler(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		// parse error
-		root.Data()["error"] = fmt.Sprintf("%s", ParseError)
-		w.Write(util.JSONify(root))
+		root.Data["error"] = fmt.Sprintf("%s", ErrParse)
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
 	err = model.Save()
 
 	if err != nil {
-		root.Data()["error"] = fmt.Sprintf("%s", err)
+		root.Data["error"] = fmt.Sprintf("%s", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.JSONify(root))
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
 	// Write the model out
-	root.Data()["id"] = model.ID
-	root.Data()["category"] = model.Name
+	root.Data["id"] = model.ID
+	root.Data["category"] = model.Name
 
-	link := &hal.LinkObject{Href: "/categories/" + model.Name}
+	root.Self("/categories/" + model.Name)
 
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-
-	w.Write(util.JSONify(root))
+	json, marshalErr := json.Marshal(root)
+	if marshalErr != nil {
+		log.Println(marshalErr)
+		return
+	}
+	w.Write(json)
 }

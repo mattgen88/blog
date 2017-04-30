@@ -2,10 +2,10 @@ package admin
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"fmt"
 
 	Gorilla "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -17,8 +17,8 @@ import (
 
 // Handler provides various http handlers
 type Handler struct {
-	r  *mux.Router
-	db *sql.DB
+	r      *mux.Router
+	db     *sql.DB
 	jwtKey string
 }
 
@@ -84,25 +84,19 @@ func Start(db *sql.DB) {
 	router.HandleFunc("/", h.RootHandler)
 
 	router.Handle("/articles", articleListHandlers)
-	router.Handle("/articles/", articleListHandlers)
 
 	router.Handle("/categories", categoryListHandlers)
-	router.Handle("/categories/", categoryListHandlers)
 
 	router.Handle("/categories/{category}", categoryHandlers)
 	router.Handle("/categories/{category}/", categoryHandlers)
 
 	router.Handle("/articles/{id:[a-zA-Z-_]+}", articleHandlers)
-	router.Handle("/articles/{id:[a-zA-Z-_]+}/", articleHandlers)
 
 	router.Handle("/users", userListHandlers)
-	router.Handle("/users/", userListHandlers)
 
 	router.Handle("/users/{id:[a-zA-Z0-9]+}", userHandlers)
-	router.Handle("/users/{id:[a-zA-Z0-9]+}/", userHandlers)
 
-	router.Handle("/auth",  http.HandlerFunc(h.Auth))
-	router.Handle("/auth/",  http.HandlerFunc(h.Auth))
+	router.Handle("/auth", http.HandlerFunc(h.Auth))
 	router.Handle("/authtest", AuthMiddleware(http.HandlerFunc(h.AuthTest), jwtKey))
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 

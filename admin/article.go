@@ -8,24 +8,18 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pmoule/go2hal/hal"
 
 	"github.com/mattgen88/blog/models"
-	"github.com/mattgen88/blog/util"
+	"github.com/mattgen88/haljson"
 )
 
 // CreateArticleHandler allows for creating new articles
 func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// @TODO: Fix author and category lookup
 	// Set up our hal resource
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
+	root.Self(r.URL.Path)
 
 	// Get the slug of the post we're dealing with
 	slug := mux.Vars(r)["id"]
@@ -40,8 +34,13 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 		// parse error
 		log.Println("Error parsing")
 		log.Println(err)
-		root.Data()["error"] = fmt.Sprintf("%s", ParseError)
-		w.Write(util.JSONify(root))
+		root.Data["error"] = fmt.Sprintf("%s", ErrParse)
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
@@ -56,22 +55,32 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Println("Error saving")
-		root.Data()["error"] = fmt.Sprintf("%s", err)
+		root.Data["error"] = fmt.Sprintf("%s", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.JSONify(root))
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
 	// Write the model out
-	root.Data()["title"] = model.Title
-	root.Data()["author"] = model.Author
-	root.Data()["body"] = model.Body
-	root.Data()["slug"] = model.Slug
-	root.Data()["date"] = model.Date
-	root.Data()["id"] = model.ID
-	root.Data()["category"] = model.Category
+	root.Data["title"] = model.Title
+	root.Data["author"] = model.Author
+	root.Data["body"] = model.Body
+	root.Data["slug"] = model.Slug
+	root.Data["date"] = model.Date
+	root.Data["id"] = model.ID
+	root.Data["category"] = model.Category
 
-	w.Write(util.JSONify(root))
+	json, marshalErr := json.Marshal(root)
+	if marshalErr != nil {
+		log.Println(marshalErr)
+		return
+	}
+	w.Write(json)
 }
 
 // ReplaceArticleHandler should take posts of articles and save them to the database
@@ -79,14 +88,9 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Handler) ReplaceArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set up our hal resource
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
+	root.Self(r.URL.Path)
 
 	// Get the slug of the post we're dealing with
 	slug := mux.Vars(r)["id"]
@@ -95,9 +99,14 @@ func (a *Handler) ReplaceArticleHandler(w http.ResponseWriter, r *http.Request) 
 	model := models.NewSQLArticle(slug, a.db)
 	err := model.Populate()
 	if err != nil {
-		root.Data()["error"] = fmt.Sprintf("%s", err)
+		root.Data["error"] = fmt.Sprintf("%s", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.JSONify(root))
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
@@ -106,29 +115,44 @@ func (a *Handler) ReplaceArticleHandler(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		// parse error
-		root.Data()["error"] = fmt.Sprintf("%s", ParseError)
+		root.Data["error"] = fmt.Sprintf("%s", ErrParse)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.JSONify(root))
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
 	err = model.Save()
 
 	if err != nil {
-		root.Data()["error"] = fmt.Sprintf("%s", err)
+		root.Data["error"] = fmt.Sprintf("%s", err)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.JSONify(root))
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
 		return
 	}
 
 	// Write the model out
-	root.Data()["title"] = model.Title
-	root.Data()["author"] = model.Author
-	root.Data()["body"] = model.Body
-	root.Data()["slug"] = model.Slug
-	root.Data()["date"] = model.Date
-	root.Data()["id"] = model.ID
-	root.Data()["category"] = model.Category
+	root.Data["title"] = model.Title
+	root.Data["author"] = model.Author
+	root.Data["body"] = model.Body
+	root.Data["slug"] = model.Slug
+	root.Data["date"] = model.Date
+	root.Data["id"] = model.ID
+	root.Data["category"] = model.Category
 
-	w.Write(util.JSONify(root))
+	json, marshalErr := json.Marshal(root)
+	if marshalErr != nil {
+		log.Println(marshalErr)
+		return
+	}
+	w.Write(json)
 }

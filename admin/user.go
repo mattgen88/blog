@@ -1,39 +1,37 @@
 package admin
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/pmoule/go2hal/hal"
-
-	"github.com/mattgen88/blog/util"
+	"github.com/mattgen88/haljson"
 )
 
 // CreateUserHandler allows for the creation of users
 func (a *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
+	root.Data["test"] = "create user"
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-	root.Data()["test"] = "testing"
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
 
 // ReplaceUserHandler allows for the modification of users
 func (a *Handler) ReplaceUserHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
+	root.Data["test"] = "replace user"
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-	root.Data()["test"] = "testing"
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
