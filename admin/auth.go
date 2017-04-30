@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -51,8 +52,6 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// @TODO look at r.Method for GET vs POST and provide some information about correctly authenticating
-
 	model := models.NewSQLUser(r.FormValue("username"), h.db)
 	err := model.Populate()
 	if err != nil || !model.Authenticate(r.FormValue("password")) {
@@ -88,14 +87,16 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := token.SignedString([]byte(h.jwtKey))
 	if err != nil {
 		root.Data["err"] = fmt.Sprintf("%s", err)
+		root.Data["result"] = false
 	} else {
-		root.Data["jwt"] = tokenString
+		root.Data["result"] = true
 		cookie := http.Cookie{
 			Name:     "jwt",
 			Value:    tokenString,
 			Secure:   true,
 			HttpOnly: true,
 			Expires:  expires,
+			Domain:   strings.Split(r.Host, ":")[0],
 		}
 		http.SetCookie(w, &cookie)
 	}
@@ -113,7 +114,7 @@ func (h *Handler) AuthTest(w http.ResponseWriter, r *http.Request) {
 	log.Println("Entered auth test")
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
-	root.Data["test"] = "create user"
+	root.Data["test"] = "Passed auth and loaded this"
 
 	json, err := json.Marshal(root)
 	if err != nil {
