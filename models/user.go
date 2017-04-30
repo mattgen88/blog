@@ -182,7 +182,7 @@ func (u *SQLUser) Save() error {
 		result, err := u.Db.Exec(query, u.Username, u.pwhash, u.Realname, u.Email, "user")
 		id, err := result.LastInsertId()
 		if err != nil {
-			return SaveError
+			return ErrSave
 		}
 		u.ID = int(id)
 	} else {
@@ -191,7 +191,7 @@ func (u *SQLUser) Save() error {
 	}
 
 	if err != nil {
-		return SaveError
+		return ErrSave
 	}
 
 	return nil

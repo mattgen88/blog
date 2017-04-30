@@ -146,7 +146,7 @@ func (c *SQLCategory) Save() error {
 	}
 
 	if err != nil {
-		return SaveError
+		return ErrSave
 	}
 
 	return nil
@@ -158,11 +158,11 @@ func (c *SQLCategory) Validate() error {
 	match, err := regexp.MatchString(`[a-zA-Z0-9\-_]+`, strings.TrimSpace(c.Name))
 	if err != nil {
 		log.Println(err)
-		return ValidationError
+		return ErrValidation
 	}
 	if !match {
 		log.Println("No match")
-		return ValidationError
+		return ErrValidation
 	}
 	return nil
 }

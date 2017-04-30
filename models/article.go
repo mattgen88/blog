@@ -179,7 +179,7 @@ func (p *SQLArticle) Populate() error {
 
 	if err != nil {
 		log.Println("Item does not exist")
-		return DNEError
+		return ErrDoesNotExist
 	}
 
 	p.Author = NewSQLUser(author, p.Db)
@@ -204,7 +204,7 @@ func (p *SQLArticle) Save() error {
 		result, err := p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
 		id, err := result.LastInsertId()
 		if err != nil {
-			return SaveError
+			return ErrSave
 		}
 		p.ID = int(id)
 	} else {
@@ -213,7 +213,7 @@ func (p *SQLArticle) Save() error {
 	}
 
 	if err != nil {
-		return SaveError
+		return ErrSave
 	}
 
 	return nil
@@ -232,7 +232,7 @@ func (p *SQLArticle) Validate() error {
 	match := slugRegexp.MatchString(p.Slug)
 	if !match {
 		log.Println("Failed to pass regex", p.Slug)
-		return ValidationError
+		return ErrValidation
 	}
 
 	return nil
