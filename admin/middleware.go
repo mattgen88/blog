@@ -1,15 +1,14 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"encoding/json"
-	
+
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/mattgen88/haljson"
-	
 )
 
 // AuthMiddleware wraps something requiring auth in the form of a jwt

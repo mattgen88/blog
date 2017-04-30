@@ -1,16 +1,15 @@
 package admin
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
-	"encoding/json"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
-
 )
 
 // AuthClaims jwt claims
@@ -24,11 +23,11 @@ type AuthClaims struct {
 func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
-	
+
 	if r.Method != http.MethodPost {
 		root.Data["error"] = "Please POST credentials"
-		root.Data["required_fields"] = []string{"username","password"}
-		
+		root.Data["required_fields"] = []string{"username", "password"}
+
 		json, marshalErr := json.Marshal(root)
 		if marshalErr != nil {
 			log.Println(marshalErr)
@@ -38,10 +37,10 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		w.Write(json)
 		return
 	}
-	
+
 	if r.FormValue("username") == "" || r.FormValue("password") == "" {
-		root.Data["required_fields"] = []string{"username","password"}
-		
+		root.Data["required_fields"] = []string{"username", "password"}
+
 		json, marshalErr := json.Marshal(root)
 		if marshalErr != nil {
 			log.Println(marshalErr)
