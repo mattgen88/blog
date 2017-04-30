@@ -1,15 +1,16 @@
 package admin
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
+	"encoding/json"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
+
 )
 
 // AuthClaims jwt claims
@@ -21,15 +22,42 @@ type AuthClaims struct {
 
 // Auth handles request to authenticate and will issue a JWT
 func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
-	log.Println("auth request received", r.FormValue("username"))
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
+	
+	if r.Method != http.MethodPost {
+		root.Data["error"] = "Please POST credentials"
+		root.Data["required_fields"] = []string{"username","password"}
+		
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write(json)
+		return
+	}
+	
+	if r.FormValue("username") == "" || r.FormValue("password") == "" {
+		root.Data["required_fields"] = []string{"username","password"}
+		
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(json)
+		return
+	}
 
 	// @TODO look at r.Method for GET vs POST and provide some information about correctly authenticating
 
 	model := models.NewSQLUser(r.FormValue("username"), h.db)
 	err := model.Populate()
 	if err != nil || !model.Authenticate(r.FormValue("password")) {
+		root.Data["error"] = "Unable to authenticate. Check that credentials are correct"
 		w.WriteHeader(http.StatusForbidden)
 		json, marshalErr := json.Marshal(root)
 		if marshalErr != nil {

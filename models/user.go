@@ -55,7 +55,6 @@ func NewSQLUser(username string, db *sql.DB) *SQLUser {
 
 // SetPassword sets the password of the user
 func (u *SQLUser) SetPassword(pw string) string {
-	log.Println("Setting password to " + pw)
 	bs, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 
 	if err != nil {
@@ -99,7 +98,6 @@ func (u *SQLUser) Exists() bool {
 
 // Authenticate authenticates the user
 func (u *SQLUser) Authenticate(pw string) bool {
-	log.Println("Testing if " + pw + " hashes to " + u.pwhash)
 	if !u.populated {
 		return false
 	}
@@ -128,19 +126,15 @@ func (u *SQLUser) HasRole(role string) bool {
 
 // Populate Fetches data and populates struct
 func (u *SQLUser) Populate() error {
-	log.Println("check if exists")
 
 	if !u.Exists() {
 		return errors.New("Instance does not exist")
 	}
-	log.Println("exists")
-	log.Println("check if dirty")
 
 	if u.dirty {
 		// Don't populate a dirty model
 		return errors.New("Model dirty")
 	}
-	log.Println("not dirty")
 
 	// Fetch data and populate
 	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role, Hash

@@ -78,7 +78,7 @@ func Start(db *sql.DB) {
 
 	var userListHandlers Gorilla.MethodHandler
 	userListHandlers = make(map[string]http.Handler)
-	userListHandlers["GET"] = http.HandlerFunc(ro.UserHandler)
+	userListHandlers["GET"] = http.HandlerFunc(ro.UsersListHandler)
 	userListHandlers["POST"] = http.HandlerFunc(h.CreateUserHandler)
 
 	router.HandleFunc("/", h.RootHandler)
