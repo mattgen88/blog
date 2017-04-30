@@ -228,11 +228,8 @@ func (p *SQLArticle) Validate() error {
 	p.Category.Populate()
 	p.Author.Db = p.Db
 	p.Author.Populate()
-	match := slugRegexp.MatchString("test")
-	if match {
-		log.Println("Success!")
-	}
-	match = slugRegexp.MatchString(p.Slug)
+
+	match := slugRegexp.MatchString(p.Slug)
 	if !match {
 		log.Println("Failed to pass regex", p.Slug)
 		return ValidationError

@@ -1,103 +1,70 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/pmoule/go2hal/hal"
 
 	"github.com/mattgen88/blog/models"
-	"github.com/mattgen88/blog/util"
+	"github.com/mattgen88/haljson"
 )
 
 // CategoryHandler handles requests for categories
 func (h *Handler) CategoryHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
-
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
 
 	c := mux.Vars(r)["category"]
 
 	category := models.NewSQLCategory(c, h.db)
 
-	root.Data()["id"] = category.ID
+	root.Data["id"] = category.ID
 
 	categories := models.ArticleListByCategory(category.ID, h.db)
-
-	var embeddedArticles []hal.Resource
 
 	for _, article := range categories {
 
 		href := fmt.Sprintf("/articles/%s", article.Slug)
-		selfLink, err := hal.NewLinkObject(href)
-
-		if err != nil {
-			log.Println(err)
-		}
-
-		self = hal.NewSelfLinkRelation()
-		self.SetLink(selfLink)
-
-		embeddedArticle := hal.NewResourceObject()
-		embeddedArticle.AddLink(self)
-		embeddedArticle.Data()["title"] = article.Title
-		embeddedArticle.Data()["author"] = article.Author.Username
-		embeddedArticle.Data()["date"] = article.Date
-		embeddedArticles = append(embeddedArticles, embeddedArticle)
+		embeddedArticle := haljson.NewResource()
+		embeddedArticle.Self(href)
+		embeddedArticle.Data["title"] = article.Title
+		embeddedArticle.Data["author"] = article.Author.Username
+		embeddedArticle.Data["date"] = article.Date
+		root.AddEmbed("articles", embeddedArticle)
 	}
 
-	articles, _ := hal.NewResourceRelation("articles")
-	articles.SetResources(embeddedArticles)
-
-	root.AddResource(articles)
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
 
 // CategoryListHandler requests a list of categories
 func (h *Handler) CategoryListHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
-
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-
-	var embeddedCategories []hal.Resource
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
 
 	for _, category := range models.CategoryList(h.db) {
 
 		href := fmt.Sprintf("/categories/%s", category.Name)
-		selfLink, err := hal.NewLinkObject(href)
 
-		if err != nil {
-			log.Println(err)
-		}
+		embeddedCategory := haljson.NewResource()
 
-		self = hal.NewSelfLinkRelation()
-		self.SetLink(selfLink)
+		embeddedCategory.Self(href)
 
-		embeddedCategory := hal.NewResourceObject()
-		embeddedCategory.AddLink(self)
-
-		embeddedCategory.Data()["name"] = category.Name
-
-		embeddedCategories = append(embeddedCategories, embeddedCategory)
+		embeddedCategory.Data["name"] = category.Name
+		root.AddEmbed("categories", embeddedCategory)
 	}
 
-	categories, _ := hal.NewResourceRelation("categories")
-	categories.SetResources(embeddedCategories)
-
-	root.AddResource(categories)
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }

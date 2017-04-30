@@ -1,25 +1,20 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/pmoule/go2hal/hal"
 
-	"github.com/mattgen88/blog/util"
+	"github.com/mattgen88/haljson"
 )
 
 // UsersListHandler handles requests for users
 func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
+	root.Self(r.URL.Path)
 
 	rows, err := h.db.Query(`SELECT Username
 		FROM Users`)
@@ -30,47 +25,41 @@ func (h *Handler) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer rows.Close()
 
-	var embeddedUsers []hal.Resource
-
 	for rows.Next() {
 		var username string
-		if err := rows.Scan(&username); err != nil {
-			log.Println(err)
+		if scanErr := rows.Scan(&username); scanErr != nil {
+			log.Println(scanErr)
 			continue
 		}
 
 		href := "/users/" + username
-		selfLink, err := hal.NewLinkObject(href)
-		if err != nil {
-			log.Println(err)
-		}
 
-		self = hal.NewSelfLinkRelation()
-		self.SetLink(selfLink)
+		embeddedUser := haljson.NewResource()
+		embeddedUser.Self(href)
+		embeddedUser.Data["username"] = username
+		root.AddEmbed("users", embeddedUser)
 
-		embeddedUser := hal.NewResourceObject()
-		embeddedUser.AddLink(self)
-		embeddedUser.Data()["username"] = username
-		embeddedUsers = append(embeddedUsers, embeddedUser)
 	}
-	users, _ := hal.NewResourceRelation("users")
-	users.SetResources(embeddedUsers)
-	root.AddResource(users)
 
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }
 
 // UserHandler handles requests for users
 func (h *Handler) UserHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
 
-	link := &hal.LinkObject{Href: r.URL.Path}
+	root.Data["username"] = mux.Vars(r)["id"]
 
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-	root.Data()["username"] = mux.Vars(r)["id"]
-
-	w.Write(util.JSONify(root))
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Write(json)
 }

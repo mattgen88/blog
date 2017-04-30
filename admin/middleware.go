@@ -2,34 +2,37 @@ package admin
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/mattgen88/blog/util"
-	"github.com/pmoule/go2hal/hal"
 	"log"
 	"net/http"
+	"encoding/json"
+	
+	"github.com/dgrijalva/jwt-go"
+
+	"github.com/mattgen88/haljson"
+	
 )
 
 // AuthMiddleware wraps something requiring auth in the form of a jwt
 func AuthMiddleware(handler http.Handler, jwtKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		root := hal.NewResourceObject()
-
-		link := &hal.LinkObject{Href: r.URL.Path}
-
-		self := hal.NewSelfLinkRelation()
-		self.SetLink(link)
-
-		root.AddLink(self)
+		root := haljson.NewResource()
+		root.Self(r.URL.Path)
 
 		// Snag JWT, verify, validate or redirect to auth endpoint
 		cookie, err := r.Cookie("jwt")
 		if err != nil {
 			log.Println("Failed to get cookie jtw: " + fmt.Sprintf("%s", err))
 
-			root.Data()["error"] = "Auth not found"
+			root.Data["error"] = "Auth not found"
 			w.WriteHeader(http.StatusForbidden)
-			w.Write(util.JSONify(root))
+
+			json, err := json.Marshal(root)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			w.Write(json)
 			return
 		}
 
@@ -63,10 +66,15 @@ func AuthMiddleware(handler http.Handler, jwtKey string) http.Handler {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			log.Println(claims["role"], claims["username"], claims["nbf"])
 		} else {
-			root.Data()["error"] = "claims not OK"
-			root.Data()["claims"] = claims
+			root.Data["error"] = "claims not OK"
+			root.Data["claims"] = claims
 			w.WriteHeader(http.StatusForbidden)
-			w.Write(util.JSONify(root))
+			json, err := json.Marshal(root)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			w.Write(json)
 			return
 		}
 

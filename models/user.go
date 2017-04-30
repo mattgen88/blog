@@ -140,13 +140,11 @@ func (u *SQLUser) Populate() error {
 	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role, Hash
 	FROM Users
 	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
-	log.Println("check for errors querying")
 
 	if err != nil {
 		log.Println(err)
 		return errors.New("Unknown error occurred")
 	}
-	log.Println("no errors")
 
 	u.populated = true
 	return nil

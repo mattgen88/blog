@@ -1,25 +1,24 @@
 package handlers
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/mattgen88/blog/util"
-	"github.com/pmoule/go2hal/hal"
+	"github.com/mattgen88/haljson"
 )
 
 // ErrorHandler handles requests for users
 func ErrorHandler(w http.ResponseWriter, r *http.Request) {
-	root := hal.NewResourceObject()
+	root := haljson.NewResource()
+	root.Self(r.URL.Path)
+	root.Data["message"] = "Resource not found"
 
-	link := &hal.LinkObject{Href: r.URL.Path}
-
-	self := hal.NewSelfLinkRelation()
-	self.SetLink(link)
-
-	root.AddLink(self)
-	root.Data()["message"] = "Resource not found"
-
+	json, err := json.Marshal(root)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	w.WriteHeader(http.StatusNotFound)
-
-	w.Write(util.JSONify(root))
+	w.Write(json)
 }
