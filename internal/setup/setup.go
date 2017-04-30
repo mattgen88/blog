@@ -8,8 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/howeyc/gopass"
 	"github.com/mattgen88/blog/models"
+
+	"github.com/howeyc/gopass"
+
+	// Register go-sqlite3 for database/sql use
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -79,7 +82,7 @@ const (
 	articlesTableInsert = `INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES ("Test", 1, "This is a test", CURRENT_TIMESTAMP, "test", 1);`
 )
 
-// Called to initialize the database
+// InitializeBlog initializes the database
 func InitializeBlog(db *sql.DB) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println(`Welcome to blog initlialization. If you have already run this
@@ -181,22 +184,20 @@ instructions and you will have working blog.`)
 	defer rows.Close()
 	for rows.Next() {
 		var id int
-		if err := rows.Scan(&id); err != nil {
-			log.Println(err)
+		if scanErr := rows.Scan(&id); scanErr != nil {
+			log.Println(scanErr)
 		}
 	}
-	if err := rows.Err(); err != nil {
-		log.Println(err)
+	if rowErr := rows.Err(); rowErr != nil {
+		log.Println(rowErr)
 	}
 
-	_, err = db.Exec(articlesTableCreate)
-	if err != nil {
-		log.Println(err)
+	if _, createErr := db.Exec(articlesTableCreate); createErr != nil {
+		log.Println(createErr)
 		return
 	}
-	_, err = db.Exec(articlesTableInsert, u.ID)
-	if err != nil {
-		log.Println(err)
+	if _, insertErr := db.Exec(articlesTableInsert, u.ID); insertErr != nil {
+		log.Println(insertErr)
 		return
 	}
 
