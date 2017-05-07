@@ -1,72 +1,91 @@
 package admin
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 
+	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
 )
 
-// AuthMiddleware wraps something requiring auth in the form of a jwt
-func AuthMiddleware(handler http.Handler, jwtKey string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// @TODO Put data into context and pass along
 
+// AuthMiddleware wraps something requiring auth in the form of a jwt
+func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		root := haljson.NewResource()
 		root.Self(r.URL.Path)
 
+		var success bool
+
 		// Snag JWT, verify, validate or redirect to auth endpoint
-		cookie, err := r.Cookie("jwt")
+		cookie, err := r.Cookie("access.jwt")
 		if err != nil {
-			log.Println("Failed to get cookie jtw: " + fmt.Sprintf("%s", err))
-
-			root.Data["error"] = "Auth not found"
-			w.WriteHeader(http.StatusForbidden)
-
-			json, err := json.Marshal(root)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			w.Write(json)
-			return
+			success = false
+		} else {
+			success, ctx = validateToken(ctx, cookie, jwtKey)
 		}
 
-		// Parse takes the token string and a function for looking up the key. The latter is especially
-		// useful if you use multiple keys for your application.  The standard is to use 'kid' in the
-		// head of the token to identify which key to use, but the parsed token (head and claims) is provided
-		// to the callback, providing flexibility.
-		token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(jwtKey), nil
-		})
-
-		if token.Valid {
-			log.Println("You look nice today")
-		} else if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				log.Println("That's not even a token")
-			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-				// Token is either expired or not active yet
-				log.Println("Timing is everything")
+		if !success {
+			// Try refresh.jwt
+			cookie, err := r.Cookie("refresh.jwt")
+			if err != nil {
+				success = false
 			} else {
-				log.Println("Couldn't handle this token:", err)
+				success, ctx = validateToken(ctx, cookie, jwtKey)
+				if success {
+					if val := ctx.Value(userDataKey("user_data")); val != nil {
+						claims := val.(jwt.MapClaims)
+
+						model := models.NewSQLUser(claims["username"].(string), db)
+						err := model.Populate()
+						if err != nil {
+							success = false
+						} else {
+							now := time.Now()
+
+							accessExpires := now.Add(time.Minute * 5)
+
+							// Create the Claims
+							accessClaims := Claims{
+								jwt.StandardClaims{
+									ExpiresAt: accessExpires.Unix(),
+									Issuer:    "test",
+								},
+								map[string]string{
+									"username": model.Username,
+									"role":     model.Role,
+								},
+							}
+							token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+
+							ctx = context.WithValue(ctx, userDataKey("user_data"), token.Claims.(Claims))
+
+							accessCookie, accessErr := createJwt("access.jwt", accessExpires, &accessClaims, jwtKey)
+							if accessErr != nil {
+								success = false
+							} else {
+								http.SetCookie(w, accessCookie)
+							}
+						}
+					} else {
+						success = false
+					}
+				}
 			}
-		} else {
-			log.Println("Couldn't handle this token:", err)
+
 		}
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			log.Println(claims["role"], claims["username"], claims["nbf"])
-		} else {
-			root.Data["error"] = "claims not OK"
-			root.Data["claims"] = claims
+		if !success {
+			root.Data["error"] = "Access denied"
 			w.WriteHeader(http.StatusForbidden)
 			json, err := json.Marshal(root)
 			if err != nil {
@@ -76,7 +95,43 @@ func AuthMiddleware(handler http.Handler, jwtKey string) http.Handler {
 			w.Write(json)
 			return
 		}
+		handler.ServeHTTP(w, r.WithContext(ctx))
 
-		handler.ServeHTTP(w, r)
 	})
+}
+
+func validateToken(ctx context.Context, cookie *http.Cookie, jwtKey string) (bool, context.Context) {
+	success := true
+
+	// Parse takes the token string and a function for looking up the key. The latter is especially
+	// useful if you use multiple keys for your application.  The standard is to use 'kid' in the
+	// head of the token to identify which key to use, but the parsed token (head and claims) is provided
+	// to the callback, providing flexibility.
+	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtKey), nil
+	})
+
+	if err != nil {
+		success = false
+	}
+
+	if !token.Valid {
+		success = false
+	}
+
+	if _, ok := err.(*jwt.ValidationError); ok {
+		success = false
+	}
+
+	if _, ok := token.Claims.(jwt.MapClaims); !ok {
+		success = false
+	}
+
+	ctx = context.WithValue(ctx, userDataKey("user_data"), token.Claims.(jwt.MapClaims))
+
+	return success, ctx
 }

@@ -15,6 +15,7 @@ func (a *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 
 	templated := true
 	root.Self("/")
+	root.AddLink("Auth", &haljson.Link{Href: "/auth"})
 	root.AddLink("Users", &haljson.Link{Href: "/users"})
 	root.AddLink("Article", &haljson.Link{Href: "/articles/{category}/{id:[a-zA-Z-_]+}", Templated: &templated})
 	root.AddLink("Articles", &haljson.Link{Href: "/articles"})
