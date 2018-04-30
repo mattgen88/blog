@@ -13,13 +13,12 @@ import (
 func (a *Handler) RootHandler(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
 
-	templated := true
 	root.Self("/")
 	root.AddLink("Auth", &haljson.Link{Href: "/auth"})
 	root.AddLink("Users", &haljson.Link{Href: "/users"})
-	root.AddLink("Article", &haljson.Link{Href: "/articles/{category}/{id:[a-zA-Z-_]+}", Templated: &templated})
+	root.AddLink("Article", &haljson.Link{Href: "/articles/{category}/{id:[a-zA-Z-_]+}", Templated: true})
 	root.AddLink("Articles", &haljson.Link{Href: "/articles"})
-	root.AddLink("Article Category", &haljson.Link{Href: "/articles/{category}", Templated: &templated})
+	root.AddLink("Article Category", &haljson.Link{Href: "/articles/{category}", Templated: true})
 	json, err := json.Marshal(root)
 	if err != nil {
 		log.Println(err)
