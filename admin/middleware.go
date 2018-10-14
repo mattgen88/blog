@@ -10,12 +10,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
 )
-
-// @TODO Put data into context and pass along
 
 // AuthMiddleware wraps something requiring auth in the form of a jwt
 func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handler {
@@ -44,37 +41,41 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 				if success {
 					if val := ctx.Value(userDataKey("user_data")); val != nil {
 						claims := val.(jwt.MapClaims)
+						if username, ok := claims["username"]; ok {
 
-						model := models.NewSQLUser(claims["username"].(string), db)
-						err := model.Populate()
-						if err != nil {
-							success = false
-						} else {
-							now := time.Now()
-
-							accessExpires := now.Add(time.Minute * 5)
-
-							// Create the Claims
-							accessClaims := Claims{
-								jwt.StandardClaims{
-									ExpiresAt: accessExpires.Unix(),
-									Issuer:    "test",
-								},
-								map[string]string{
-									"username": model.Username,
-									"role":     model.Role,
-								},
-							}
-							token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-
-							ctx = context.WithValue(ctx, userDataKey("user_data"), token.Claims.(Claims))
-
-							accessCookie, accessErr := createJwt("access.jwt", accessExpires, &accessClaims, jwtKey)
-							if accessErr != nil {
+							model := models.NewSQLUser(username.(string), db)
+							err := model.Populate()
+							if err != nil {
 								success = false
 							} else {
-								http.SetCookie(w, accessCookie)
+								now := time.Now()
+
+								accessExpires := now.Add(time.Minute * 5)
+
+								// Create the Claims
+								accessClaims := Claims{
+									jwt.StandardClaims{
+										ExpiresAt: accessExpires.Unix(),
+										Issuer:    "test",
+									},
+									map[string]string{
+										"username": model.Username,
+										"role":     model.Role,
+									},
+								}
+								token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+
+								ctx = context.WithValue(ctx, userDataKey("user_data"), token.Claims.(Claims))
+
+								accessCookie, accessErr := createJwt("access.jwt", accessExpires, &accessClaims, jwtKey)
+								if accessErr != nil {
+									success = false
+								} else {
+									http.SetCookie(w, accessCookie)
+								}
 							}
+						} else {
+							success = false
 						}
 					} else {
 						success = false

@@ -146,12 +146,11 @@ func createJwt(name string, expire time.Time, claims jwt.Claims, jwtKey string) 
 	return &cookie, nil
 }
 
-// AuthTest tests auth
-func (h *Handler) AuthTest(w http.ResponseWriter, r *http.Request) {
-	log.Println("Entered auth test")
+// AuthRefresh returns result = true if AUTHed.
+func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
-	root.Data["test"] = "Passed auth and loaded this"
+	root.Data["result"] = true;
 
 	json, err := json.Marshal(root)
 	if err != nil {
@@ -159,5 +158,4 @@ func (h *Handler) AuthTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(json)
-
 }

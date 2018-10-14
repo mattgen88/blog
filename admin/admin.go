@@ -97,7 +97,7 @@ func Start(db *sql.DB) {
 	router.Handle("/users/{id:[a-zA-Z0-9]+}", AuthMiddleware(userHandlers, jwtKey, db))
 
 	router.Handle("/auth", http.HandlerFunc(h.Auth))
-	router.Handle("/authtest", AuthMiddleware(http.HandlerFunc(h.AuthTest), jwtKey, db))
+	router.Handle("/refresh", AuthMiddleware(http.HandlerFunc(h.AuthRefresh), jwtKey, db))
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
 	// Firewall prevents access to this outside the network
