@@ -21,8 +21,9 @@ type userData struct {
 
 // Claims holds claims for a token
 type Claims struct {
+	Username string
+	Role string
 	jwt.StandardClaims
-	claims map[string]string
 }
 
 // Auth handles request to authenticate and will issue a JWT
@@ -82,24 +83,26 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 
 	// Create the Claims
 	accessClaims := Claims{
-		claims: map[string]string{
-			"username": model.Username,
-			"role":     model.Role,
+		model.Username,
+		model.Role,
+		jwt.StandardClaims{
+			ExpiresAt: accessExpires.Unix(),
+			Issuer: "test",
 		},
 	}
-	accessClaims.ExpiresAt = accessExpires.Unix()
-	accessClaims.Issuer = "test"
 
 	refreshClaims := Claims{
-		claims: map[string]string{
-			"username": model.Username,
+		model.Username,
+		model.Role,
+		jwt.StandardClaims{
+			ExpiresAt: accessExpires.Unix(),
+			Issuer: "test",
 		},
 	}
-	refreshClaims.ExpiresAt = refreshExpires.Unix()
-	refreshClaims.Issuer = "test"
 
 	accessCookie, accessErr := createJwt("access.jwt", accessExpires, &accessClaims, h.jwtKey)
 	refreshCookie, refreshErr := createJwt("refresh.jwt", refreshExpires, &refreshClaims, h.jwtKey)
+
 	if accessErr != nil {
 		root.Data["err"] = fmt.Sprintf("%s", accessErr)
 		root.Data["result"] = false

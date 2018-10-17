@@ -32,6 +32,7 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 		}
 
 		if !success {
+			log.Println("access.jwt failed to validate")
 			// Try refresh.jwt
 			cookie, err := r.Cookie("refresh.jwt")
 			if err != nil {
@@ -39,13 +40,16 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 			} else {
 				success, ctx = validateToken(ctx, cookie, jwtKey)
 				if success {
+					log.Println("refresh.jwt validated, updating access.jwt")
 					if val := ctx.Value(userDataKey("user_data")); val != nil {
-						claims := val.(jwt.MapClaims)
+						mapClaims := val.(jwt.MapClaims)
+						claims := mapClaims["Claims"].(map[string]interface{})
 						if username, ok := claims["username"]; ok {
 
 							model := models.NewSQLUser(username.(string), db)
 							err := model.Populate()
 							if err != nil {
+								log.Println(err)
 								success = false
 							} else {
 								now := time.Now()
@@ -54,13 +58,11 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 
 								// Create the Claims
 								accessClaims := Claims{
+									model.Username,
+									model.Role,
 									jwt.StandardClaims{
 										ExpiresAt: accessExpires.Unix(),
 										Issuer:    "test",
-									},
-									map[string]string{
-										"username": model.Username,
-										"role":     model.Role,
 									},
 								}
 								token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
@@ -69,17 +71,22 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 
 								accessCookie, accessErr := createJwt("access.jwt", accessExpires, &accessClaims, jwtKey)
 								if accessErr != nil {
+									log.Println(accessErr)
 									success = false
 								} else {
 									http.SetCookie(w, accessCookie)
 								}
 							}
 						} else {
+							log.Println("No username")
 							success = false
 						}
 					} else {
+						log.Println("No user_data")
 						success = false
 					}
+				} else {
+					log.Println("refresh.jwt failed to validate")
 				}
 			}
 
