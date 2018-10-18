@@ -84,20 +84,27 @@ func Start(db *sql.DB) {
 	router.HandleFunc("/", h.RootHandler)
 
 	router.Handle("/articles", AuthMiddleware(articleListHandlers, jwtKey, db))
+	router.Handle("/articles/", AuthMiddleware(articleListHandlers, jwtKey, db))
 
 	router.Handle("/categories", AuthMiddleware(categoryListHandlers, jwtKey, db))
+	router.Handle("/categories/", AuthMiddleware(categoryListHandlers, jwtKey, db))
 
 	router.Handle("/categories/{category}", AuthMiddleware(categoryHandlers, jwtKey, db))
 	router.Handle("/categories/{category}/", AuthMiddleware(categoryHandlers, jwtKey, db))
 
 	router.Handle("/articles/{id:[a-zA-Z-_]+}", AuthMiddleware(articleHandlers, jwtKey, db))
+	router.Handle("/articles/{id:[a-zA-Z-_]+}/", AuthMiddleware(articleHandlers, jwtKey, db))
 
 	router.Handle("/users", AuthMiddleware(userListHandlers, jwtKey, db))
+	router.Handle("/users/", AuthMiddleware(userListHandlers, jwtKey, db))
 
 	router.Handle("/users/{id:[a-zA-Z0-9]+}", AuthMiddleware(userHandlers, jwtKey, db))
+	router.Handle("/users/{id:[a-zA-Z0-9]+}/", AuthMiddleware(userHandlers, jwtKey, db))
 
 	router.Handle("/auth", http.HandlerFunc(h.Auth))
+	router.Handle("/auth/", http.HandlerFunc(h.Auth))
 	router.Handle("/refresh", AuthMiddleware(http.HandlerFunc(h.AuthRefresh), jwtKey, db))
+	router.Handle("/refresh/", AuthMiddleware(http.HandlerFunc(h.AuthRefresh), jwtKey, db))
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
 	// Firewall prevents access to this outside the network

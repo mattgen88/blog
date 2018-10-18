@@ -95,7 +95,7 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		model.Username,
 		model.Role,
 		jwt.StandardClaims{
-			ExpiresAt: accessExpires.Unix(),
+			ExpiresAt: refreshExpires.Unix(),
 			Issuer: "test",
 		},
 	}
