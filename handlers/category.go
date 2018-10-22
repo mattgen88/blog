@@ -49,6 +49,8 @@ func (h *Handler) CategoryListHandler(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
 
+	var categories []string
+
 	for _, category := range models.CategoryList(h.db) {
 
 		href := fmt.Sprintf("/categories/%s", category.Name)
@@ -59,7 +61,9 @@ func (h *Handler) CategoryListHandler(w http.ResponseWriter, r *http.Request) {
 
 		embeddedCategory.Data["name"] = category.Name
 		root.AddEmbed("categories", embeddedCategory)
+		categories = append(categories, category.Name)
 	}
+	root.Data["categories"] = categories
 
 	json, err := json.Marshal(root)
 	if err != nil {

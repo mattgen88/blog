@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
@@ -43,8 +44,8 @@ func AuthMiddleware(handler http.Handler, jwtKey string, db *sql.DB) http.Handle
 					log.Println("refresh.jwt validated, updating access.jwt")
 					if val := ctx.Value(userDataKey("user_data")); val != nil {
 						mapClaims := val.(jwt.MapClaims)
-						claims := mapClaims["Claims"].(map[string]interface{})
-						if username, ok := claims["username"]; ok {
+						spew.Dump(mapClaims)
+						if username, ok := mapClaims["Username"]; ok {
 
 							model := models.NewSQLUser(username.(string), db)
 							err := model.Populate()

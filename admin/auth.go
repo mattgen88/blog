@@ -22,7 +22,7 @@ type userData struct {
 // Claims holds claims for a token
 type Claims struct {
 	Username string
-	Role string
+	Role     string
 	jwt.StandardClaims
 }
 
@@ -87,7 +87,7 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		model.Role,
 		jwt.StandardClaims{
 			ExpiresAt: accessExpires.Unix(),
-			Issuer: "test",
+			Issuer:    "test",
 		},
 	}
 
@@ -96,7 +96,7 @@ func (h *Handler) Auth(w http.ResponseWriter, r *http.Request) {
 		model.Role,
 		jwt.StandardClaims{
 			ExpiresAt: refreshExpires.Unix(),
-			Issuer: "test",
+			Issuer:    "test",
 		},
 	}
 
@@ -153,7 +153,7 @@ func createJwt(name string, expire time.Time, claims jwt.Claims, jwtKey string) 
 func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
 	root.Self(r.URL.Path)
-	root.Data["result"] = true;
+	root.Data["result"] = true
 
 	json, err := json.Marshal(root)
 	if err != nil {

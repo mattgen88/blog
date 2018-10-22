@@ -11,6 +11,8 @@ import (
 
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
+	//"github.com/davecgh/go-spew/spew"
+	"github.com/dgrijalva/jwt-go"
 )
 
 // CreateArticleHandler allows for creating new articles
@@ -21,37 +23,53 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	root.Self(r.URL.Path)
 
-	// Get the slug of the post we're dealing with
-	slug := mux.Vars(r)["id"]
+	slug := r.FormValue("slug")
+	title := r.FormValue("title")
+	body := r.FormValue("body")
+	categoryVal := r.FormValue("category")
 
-	// Fetch the requested article
-	model := models.NewSQLArticle(slug, a.db)
-
-	// Unpack posted data into model
-	err := json.NewDecoder(r.Body).Decode(&model)
-
-	if err != nil {
-		// parse error
-		log.Println("Error parsing")
-		log.Println(err)
-		root.Data["error"] = fmt.Sprintf("%s", ErrParse)
+	if slug == "" || title == "" || body == "" || categoryVal == "" {
+		log.Println("Error validating")
+		root.Data["error"] = "Error validating, all fields required"
+		w.WriteHeader(http.StatusBadRequest)
 		json, marshalErr := json.Marshal(root)
 		if marshalErr != nil {
 			log.Println(marshalErr)
 			return
 		}
 		w.Write(json)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	var username string
+	if val := r.Context().Value(userDataKey("user_data")); val != nil {
+		username = val.(jwt.MapClaims)["Username"].(string)
+	}
+	// Fetch the requested article
+	model := models.NewSQLArticle(slug, a.db)
 
 	if model.Exists() {
 		log.Println("Conflict")
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
+
+	category := models.NewSQLCategory(categoryVal, a.db)
+	if !category.Exists() {
+		category.Save()
+	}
+
+	author := models.NewSQLUser(username, a.db)
+	model.Author = author
+
+	model.Category = category
+	model.Title = title
+	model.Body = body
+	model.Slug = slug
+
 	now := time.Now()
 	model.Date = &now
-	err = model.Save()
+	err := model.Save()
 
 	if err != nil {
 		log.Println("Error saving")
@@ -63,6 +81,7 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write(json)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

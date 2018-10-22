@@ -54,22 +54,22 @@ func Start(db *sql.DB) {
 	var articleHandlers Gorilla.MethodHandler
 	articleHandlers = make(map[string]http.Handler)
 	articleHandlers["GET"] = http.HandlerFunc(ro.ArticleHandler)
-	articleHandlers["POST"] = http.HandlerFunc(h.ReplaceArticleHandler)
+	articleHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.ReplaceArticleHandler), jwtKey, db)
 
 	var articleListHandlers Gorilla.MethodHandler
 	articleListHandlers = make(map[string]http.Handler)
 	articleListHandlers["GET"] = http.HandlerFunc(ro.ArticleListHandler)
-	articleListHandlers["POST"] = http.HandlerFunc(h.CreateArticleHandler)
+	articleListHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.CreateArticleHandler), jwtKey, db)
 
 	var categoryListHandlers Gorilla.MethodHandler
 	categoryListHandlers = make(map[string]http.Handler)
 	categoryListHandlers["GET"] = http.HandlerFunc(ro.CategoryListHandler)
-	categoryListHandlers["POST"] = http.HandlerFunc(h.CreateCategoryHandler)
+	categoryListHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.CreateCategoryHandler), jwtKey, db)
 
 	var categoryHandlers Gorilla.MethodHandler
 	categoryHandlers = make(map[string]http.Handler)
 	categoryHandlers["GET"] = http.HandlerFunc(ro.CategoryHandler)
-	categoryHandlers["POST"] = http.HandlerFunc(h.ReplaceCategoryHandler)
+	categoryHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.ReplaceCategoryHandler), jwtKey, db)
 
 	var userHandlers Gorilla.MethodHandler
 	userHandlers = make(map[string]http.Handler)
@@ -83,17 +83,17 @@ func Start(db *sql.DB) {
 
 	router.HandleFunc("/", h.RootHandler)
 
-	router.Handle("/articles", AuthMiddleware(articleListHandlers, jwtKey, db))
-	router.Handle("/articles/", AuthMiddleware(articleListHandlers, jwtKey, db))
+	router.Handle("/articles", articleListHandlers)
+	router.Handle("/articles/", articleListHandlers)
 
-	router.Handle("/categories", AuthMiddleware(categoryListHandlers, jwtKey, db))
-	router.Handle("/categories/", AuthMiddleware(categoryListHandlers, jwtKey, db))
+	router.Handle("/categories", categoryListHandlers)
+	router.Handle("/categories/", categoryListHandlers)
 
-	router.Handle("/categories/{category}", AuthMiddleware(categoryHandlers, jwtKey, db))
-	router.Handle("/categories/{category}/", AuthMiddleware(categoryHandlers, jwtKey, db))
+	router.Handle("/categories/{category}", categoryHandlers)
+	router.Handle("/categories/{category}/", categoryHandlers)
 
-	router.Handle("/articles/{id:[a-zA-Z-_]+}", AuthMiddleware(articleHandlers, jwtKey, db))
-	router.Handle("/articles/{id:[a-zA-Z-_]+}/", AuthMiddleware(articleHandlers, jwtKey, db))
+	router.Handle("/articles", articleHandlers)
+	router.Handle("/articles/", articleHandlers)
 
 	router.Handle("/users", AuthMiddleware(userListHandlers, jwtKey, db))
 	router.Handle("/users/", AuthMiddleware(userListHandlers, jwtKey, db))
