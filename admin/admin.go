@@ -74,7 +74,7 @@ func Start(db *sql.DB) {
 	var userHandlers Gorilla.MethodHandler
 	userHandlers = make(map[string]http.Handler)
 	userHandlers["GET"] = http.HandlerFunc(ro.UserHandler)
-	userHandlers["POST"] = http.HandlerFunc(h.ReplaceUserHandler)
+	userHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.ReplaceUserHandler), jwtKey, db)
 
 	var userListHandlers Gorilla.MethodHandler
 	userListHandlers = make(map[string]http.Handler)

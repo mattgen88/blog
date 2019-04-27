@@ -48,27 +48,23 @@ func (a *Handler) CreateArticleHandler(w http.ResponseWriter, r *http.Request) {
 	// Fetch the requested article
 	model := models.NewSQLArticle(slug, a.db)
 
-	if model.Exists() {
-		log.Println("Conflict")
-		w.WriteHeader(http.StatusConflict)
-		return
-	}
-
 	category := models.NewSQLCategory(categoryVal, a.db)
 	if !category.Exists() {
 		category.Save()
 	}
 
-	author := models.NewSQLUser(username, a.db)
-	model.Author = author
+	if !model.Exists() {
+		author := models.NewSQLUser(username, a.db)
+		model.Author = author
+		model.Slug = slug
+		now := time.Now()
+		model.Date = &now
+	}
 
 	model.Category = category
 	model.Title = title
 	model.Body = body
-	model.Slug = slug
 
-	now := time.Now()
-	model.Date = &now
 	err := model.Save()
 
 	if err != nil {
