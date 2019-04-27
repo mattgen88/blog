@@ -79,14 +79,14 @@ func main() {
 	r.HandleFunc("/categories/{category}", h.CategoryHandler)
 	r.HandleFunc("/categories/{category}/", h.CategoryHandler)
 
-	r.HandleFunc("/articles/{id:[a-zA-Z-_]+}", h.ArticleHandler)
-	r.HandleFunc("/articles/{id:[a-zA-Z-_]+}/", h.ArticleHandler)
+	r.HandleFunc("/articles/{id}", h.ArticleHandler)
+	r.HandleFunc("/articles/{id}/", h.ArticleHandler)
 
 	r.HandleFunc("/users", h.UsersListHandler)
 	r.HandleFunc("/users/", h.UsersListHandler)
 
-	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}", h.UserHandler)
-	r.HandleFunc("/users/{id:[a-zA-Z0-9]+}/", h.UserHandler)
+	r.HandleFunc("/users/{id}", h.UserHandler)
+	r.HandleFunc("/users/{id}/", h.UserHandler)
 
 	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 

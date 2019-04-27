@@ -92,14 +92,14 @@ func Start(db *sql.DB) {
 	router.Handle("/categories/{category}", categoryHandlers)
 	router.Handle("/categories/{category}/", categoryHandlers)
 
-	router.Handle("/articles/{id:[a-zA-Z0-9]+}", articleHandlers)
-	router.Handle("/articles/{id:[a-zA-Z0-9]+}/", articleHandlers)
+	router.Handle("/articles/{id}", articleHandlers)
+	router.Handle("/articles/{id}/", articleHandlers)
 
 	router.Handle("/users", AuthMiddleware(userListHandlers, jwtKey, db))
 	router.Handle("/users/", AuthMiddleware(userListHandlers, jwtKey, db))
 
-	router.Handle("/users/{id:[a-zA-Z0-9]+}", AuthMiddleware(userHandlers, jwtKey, db))
-	router.Handle("/users/{id:[a-zA-Z0-9]+}/", AuthMiddleware(userHandlers, jwtKey, db))
+	router.Handle("/users/{id}", AuthMiddleware(userHandlers, jwtKey, db))
+	router.Handle("/users/{id}/", AuthMiddleware(userHandlers, jwtKey, db))
 
 	router.Handle("/auth", http.HandlerFunc(h.Auth))
 	router.Handle("/auth/", http.HandlerFunc(h.Auth))
