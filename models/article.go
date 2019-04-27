@@ -52,7 +52,8 @@ func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
 	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
 		FROM Articles
 		JOIN Users on Users.UserId = Articles.Author
-		WHERE Articles.Category = ?`, categoryId)
+		WHERE Articles.Category = ?
+		ORDER BY Date desc`, categoryId)
 
 	if err != nil {
 		log.Println(err)
@@ -95,7 +96,8 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
 		FROM Articles
 		JOIN Category on Category.CategoryId = Articles.Category
-		JOIN Users on Users.UserId = Articles.Author`)
+		JOIN Users on Users.UserId = Articles.Author
+		ORDER BY Date DESC`)
 
 	if err != nil {
 		log.Println("Error querying for all articles", err)
