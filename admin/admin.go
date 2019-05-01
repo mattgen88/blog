@@ -93,7 +93,7 @@ func Start(db *sql.DB) {
 	router.Handle("/categories/{category}", categoryHandlers)
 	router.Handle("/categories/{category}/", categoryHandlers)
 
-	router.Handle("/articles/{id}", Gorilla.CORS(Gorilla.AllowedMethods([]string{"GET", "POST", "DELETE"}))(articleHandlers))
+	router.Handle("/articles/{id}", articleHandlers)
 	router.Handle("/articles/{id}/", articleHandlers)
 
 	router.Handle("/users", AuthMiddleware(userListHandlers, jwtKey, db))
@@ -109,5 +109,5 @@ func Start(db *sql.DB) {
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
 	// Firewall prevents access to this outside the network
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", adminHost, adminPort), util.ContentType(Gorilla.LoggingHandler(os.Stdout, router), "application/hal+json")))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", adminHost, adminPort), util.ContentType(Gorilla.LoggingHandler(os.Stdout, Gorilla.CORS(Gorilla.AllowedMethods([]string{"GET", "POST", "DELETE"}))(router)), "application/hal+json")))
 }
