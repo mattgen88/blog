@@ -55,6 +55,7 @@ func Start(db *sql.DB) {
 	articleHandlers = make(map[string]http.Handler)
 	articleHandlers["GET"] = http.HandlerFunc(ro.ArticleHandler)
 	articleHandlers["POST"] = AuthMiddleware(http.HandlerFunc(h.ReplaceArticleHandler), jwtKey, db)
+	articleHandlers["DELETE"] = AuthMiddleware(http.HandlerFunc(h.DeleteArticleHandler), jwtKey, db)
 
 	var articleListHandlers Gorilla.MethodHandler
 	articleListHandlers = make(map[string]http.Handler)

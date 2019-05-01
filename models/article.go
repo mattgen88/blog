@@ -14,6 +14,7 @@ type Article interface {
 	Populate() error
 	Save() error
 	Validate() error
+	Delete() error
 }
 
 // SQLArticle is a SQL backed Article
@@ -180,7 +181,7 @@ func (p *SQLArticle) Populate() error {
 	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
-		log.Println("Item does not exist")
+		log.Println("Item does not exist", ErrDoesNotExist)
 		return ErrDoesNotExist
 	}
 
@@ -215,9 +216,28 @@ func (p *SQLArticle) Save() error {
 	}
 
 	if err != nil {
+		log.Println("Failed to save article", ErrSave)
 		return ErrSave
 	}
 
+	return nil
+}
+
+// Delete the requested article
+func (p *SQLArticle) Delete() error {
+	var err error
+	var query string
+
+	if !p.Exists() {
+		return ErrDoesNotExist
+	}
+	query = "DELETE FROM Articles WHERE Slug = ? LIMIT 1"
+	_, err = p.Db.Exec(query, p.Slug)
+
+	if err != nil {
+		log.Println("Failed to delete article", ErrDelete)
+		return ErrDelete
+	}
 	return nil
 }
 

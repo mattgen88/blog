@@ -11,6 +11,7 @@ import (
 
 	"github.com/mattgen88/blog/models"
 	"github.com/mattgen88/haljson"
+
 	//"github.com/davecgh/go-spew/spew"
 	"github.com/dgrijalva/jwt-go"
 )
@@ -144,6 +145,61 @@ func (a *Handler) ReplaceArticleHandler(w http.ResponseWriter, r *http.Request) 
 	err = model.Save()
 
 	if err != nil {
+		root.Data["error"] = fmt.Sprintf("%s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
+		return
+	}
+
+	// Write the model out
+	root.Data["title"] = model.Title
+	root.Data["author"] = model.Author
+	root.Data["body"] = model.Body
+	root.Data["slug"] = model.Slug
+	root.Data["date"] = model.Date
+	root.Data["id"] = model.ID
+	root.Data["category"] = model.Category
+
+	json, marshalErr := json.Marshal(root)
+	if marshalErr != nil {
+		log.Println(marshalErr)
+		return
+	}
+	w.Write(json)
+}
+
+// DeleteArticleHandler should delete an article by the given id
+func (a *Handler) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
+	// Set up our hal resource
+	root := haljson.NewResource()
+
+	root.Self(r.URL.Path)
+
+	// Get the slug of the post we're dealing with
+	slug := mux.Vars(r)["id"]
+
+	// Fetch the requested article
+	model := models.NewSQLArticle(slug, a.db)
+	err := model.Populate()
+	if err != nil {
+		root.Data["error"] = fmt.Sprintf("%s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		json, marshalErr := json.Marshal(root)
+		if marshalErr != nil {
+			log.Println(marshalErr)
+			return
+		}
+		w.Write(json)
+		return
+	}
+	err = model.Delete()
+	if err != nil {
+
 		root.Data["error"] = fmt.Sprintf("%s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		json, marshalErr := json.Marshal(root)
