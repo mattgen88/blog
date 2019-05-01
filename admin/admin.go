@@ -93,7 +93,7 @@ func Start(db *sql.DB) {
 	router.Handle("/categories/{category}", categoryHandlers)
 	router.Handle("/categories/{category}/", categoryHandlers)
 
-	router.Handle("/articles/{id}", articleHandlers)
+	router.Handle("/articles/{id}", Gorilla.CORS(Gorilla.AllowedMethods([]string{"GET", "POST", "DELETE"}))(articleHandlers))
 	router.Handle("/articles/{id}/", articleHandlers)
 
 	router.Handle("/users", AuthMiddleware(userListHandlers, jwtKey, db))
