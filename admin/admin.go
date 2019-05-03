@@ -109,5 +109,5 @@ func Start(db *sql.DB) {
 	router.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
 	// Firewall prevents access to this outside the network
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", adminHost, adminPort), util.ContentType(Gorilla.LoggingHandler(os.Stdout, Gorilla.CORS(Gorilla.AllowedMethods([]string{"GET", "POST", "DELETE"}))(router)), "application/hal+json")))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", adminHost, adminPort), Gorilla.CORS(Gorilla.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}), Gorilla.AllowedOrigins([]string{"https://admin.digitalwny.com"}), Gorilla.AllowCredentials())(util.ContentType(Gorilla.LoggingHandler(os.Stdout, router), "application/hal+json"))))
 }

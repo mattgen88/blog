@@ -185,19 +185,7 @@ func (a *Handler) DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the requested article
 	model := models.NewSQLArticle(slug, a.db)
-	err := model.Populate()
-	if err != nil {
-		root.Data["error"] = fmt.Sprintf("%s", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json, marshalErr := json.Marshal(root)
-		if marshalErr != nil {
-			log.Println(marshalErr)
-			return
-		}
-		w.Write(json)
-		return
-	}
-	err = model.Delete()
+	err := model.Delete()
 	if err != nil {
 
 		root.Data["error"] = fmt.Sprintf("%s", err)

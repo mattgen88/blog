@@ -231,11 +231,11 @@ func (p *SQLArticle) Delete() error {
 	if !p.Exists() {
 		return ErrDoesNotExist
 	}
-	query = "DELETE FROM Articles WHERE Slug = ? LIMIT 1"
+	query = "DELETE FROM Articles WHERE Slug = ?"
 	_, err = p.Db.Exec(query, p.Slug)
 
 	if err != nil {
-		log.Println("Failed to delete article", ErrDelete)
+		log.Println("Failed to delete article", err)
 		return ErrDelete
 	}
 	return nil

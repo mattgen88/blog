@@ -9,6 +9,7 @@ import (
 
 	Gorilla "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
 	// registers with database/sql
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
