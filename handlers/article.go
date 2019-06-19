@@ -12,6 +12,8 @@ import (
 	"github.com/mattgen88/haljson"
 )
 
+const max_len = 500
+
 // ArticleListHandler handles requests for articles
 func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 	root := haljson.NewResource()
@@ -30,10 +32,10 @@ func (h *Handler) ArticleListHandler(w http.ResponseWriter, r *http.Request) {
 		embeddedArticle.Data["slug"] = article.Slug
 
 		var trunc int
-		if len(article.Body) <= 100 {
+		if len(article.Body) <= max_len {
 			trunc = len(article.Body)
 		} else {
-			trunc = 100
+			trunc = max_len
 		}
 		embeddedArticle.Data["description"] = article.Body[0:trunc]
 		root.AddEmbed("articles", embeddedArticle)
