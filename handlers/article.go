@@ -58,9 +58,13 @@ func (h *Handler) ArticleHandler(w http.ResponseWriter, r *http.Request) {
 	root.Data["article"] = article
 	root.Data["body"] = article.Body
 	root.Data["title"] = article.Title
-	root.Data["author"] = article.Author.Username
+	if article.Author != nil {
+		root.Data["author"] = article.Author.Username
+	}
 	root.Data["date"] = article.Date
-	root.Data["category"] = article.Category.Name
+	if article.Category != nil {
+		root.Data["category"] = article.Category.Name
+	}
 	root.Data["slug"] = article.Slug
 
 	json, err := json.Marshal(root)
