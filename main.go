@@ -19,16 +19,7 @@ import (
 )
 
 func main() {
-	// Set configuration file information
-	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/blog/")
-	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error loading config /etc/blog/config: %s", err)
-	}
 
 	// Gather configuration
 	viper.BindEnv("dbfile")

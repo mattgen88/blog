@@ -1,0 +1,15 @@
+services:
+  blog:
+    container_name: blog
+    ports:
+    - '7000:7000'
+    environment:
+    - DBFILE=/blog-data.sqlite
+    - PORT=7000
+    - HOST=0.0.0.0
+    volumes:
+    - './blog-data.sqlite:/blog-data.sqlite'
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
