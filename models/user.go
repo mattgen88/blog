@@ -180,8 +180,13 @@ func (u *SQLUser) Save() error {
 			)
 		);`
 		result, err := u.Db.Exec(query, u.Username, u.pwhash, u.Realname, u.Email, "user")
+		if err != nil {
+			log.Println(err)
+			return ErrSave
+		}
 		id, err := result.LastInsertId()
 		if err != nil {
+			log.Println(err)
 			return ErrSave
 		}
 		u.ID = int(id)
