@@ -1,9 +1,0 @@
-[Unit]
-Description = Blog service
-After = network.target
-[Service]
-ExecStart = /srv/services/blog/blog
-User = mgeneral
-[Install]
-WantedBy = multi-user.target
-

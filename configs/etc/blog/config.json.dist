@@ -1,8 +1,0 @@
-{
-	"dbfile": "/srv/services/blog/db.sqlite",
-	"host": "0.0.0.0",
-	"port": 9000,
-	"jwtKey": "somestring",
-	"adminHost": "0.0.0.0",
-	"adminPort": 9001
-}

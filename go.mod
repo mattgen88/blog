@@ -22,6 +22,7 @@ require (
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.5 // indirect
+	github.com/lib/pq v1.8.0
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mattgen88/haljson v1.0.2
 	github.com/mattn/go-sqlite3 v1.14.4

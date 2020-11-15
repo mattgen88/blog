@@ -1,12 +1,23 @@
 services:
+  db:
+    image: postgres:alpine
+    restart: always
+    environment:
+    - POSTGRES_PASSWORD
+    - POSTGRES_USER=blogrw
+    - POSTGRES_DB=blog
+    ports:
+    - "5432:5432"
   blog:
     container_name: blog
     ports:
     - '7000:7000'
     environment:
-    - DBFILE=/blog-data.sqlite
+    - DSN
     - PORT=7000
     - HOST=0.0.0.0
+    env_file:
+    - '.env'
     volumes:
     - './blog-data.sqlite:/blog-data.sqlite'
     restart: unless-stopped

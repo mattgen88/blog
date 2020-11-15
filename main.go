@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 
 	// registers with database/sql
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 
 	"github.com/mattgen88/blog/handlers"
@@ -22,27 +22,22 @@ func main() {
 	viper.AutomaticEnv()
 
 	// Gather configuration
-	viper.BindEnv("dbfile")
-	dbFile := viper.GetString("dbfile")
+	viper.BindEnv("dsn")
+	dsn := viper.GetString("dsn")
 
 	viper.SetDefault("port", 8088)
 	port := viper.GetInt("port")
 
 	viper.SetDefault("host", "127.0.0.1")
 	host := viper.GetString("host")
+	log.Println("Starting on ", host, " port ", port, " dsn ", dsn)
 
-	db, err := sql.Open("sqlite3", dbFile+"?parseTime=True")
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer db.Close()
-
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
-	if err != nil {
-		log.Println("Error enabling foreign keys", err)
-		return
-	}
 
 	r := mux.NewRouter()
 
