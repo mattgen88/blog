@@ -84,9 +84,10 @@ func (u *SQLUser) Exists() bool {
 		return true
 	}
 	var count int
-	err := u.Db.QueryRow(`SELECT COUNT(*) FROM Users WHERE Username = ?`, u.Username).Scan(&count)
+	err := u.Db.QueryRow(`SELECT COUNT(*) FROM "users" WHERE "username" = ?`, u.Username).Scan(&count)
 
 	if err != nil {
+		log.Println(err)
 		if err == sql.ErrNoRows {
 			return false
 		}
@@ -137,9 +138,9 @@ func (u *SQLUser) Populate() error {
 	}
 
 	// Fetch data and populate
-	err := u.Db.QueryRow(`SELECT UserId, Created, RealName, Email, Role, Hash
-	FROM Users
-	WHERE Username = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
+	err := u.Db.QueryRow(`SELECT "userId", "created", "realname", "email", "role", "hash"
+	FROM "users"
+	WHERE "username" = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
 
 	if err != nil {
 		log.Println(err)
@@ -160,13 +161,13 @@ func (u *SQLUser) Save() error {
 		return err
 	}
 	if !u.Exists() {
-		query = `INSERT INTO Users (
-			Username,
-			Hash,
-			RealName,
-			Email,
-			Created,
-			Role
+		query = `INSERT INTO "users" (
+			"username",
+			"hash",
+			"realName",
+			"email",
+			"created",
+			"role"
 		) VALUES (
 			?,
 			?,
@@ -174,9 +175,9 @@ func (u *SQLUser) Save() error {
 			?,
 			CURRENT_TIMESTAMP,
 			(
-				SELECT RoleID
-				FROM Role
-				WHERE Name = ?
+				SELECT "roleid"
+				FROM "role"
+				WHERE "name" = ?
 			)
 		);`
 		result, err := u.Db.Exec(query, u.Username, u.pwhash, u.Realname, u.Email, "user")
@@ -191,7 +192,7 @@ func (u *SQLUser) Save() error {
 		}
 		u.ID = int(id)
 	} else {
-		query = `UPDATE Users SET Hash = ?, RealName = ?, Email = ?, Role = ? WHERE UserID = ?`
+		query = `UPDATE "users" SET "hash" = ?, "realname" = ?, "email" = ?, "role" = ? WHERE "userid" = ?`
 		_, err = u.Db.Exec(query, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
 	}
 

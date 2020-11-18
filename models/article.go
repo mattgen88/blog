@@ -47,14 +47,14 @@ func NewSQLArticle(slug string, Db *sql.DB) *SQLArticle {
 }
 
 // ArticleListByCategory returns an article list by category, imagine that.
-func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
+func ArticleListByCategory(categoryID int, Db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
-	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username
-		FROM Articles
-		JOIN Users on Users.UserId = Articles.Author
-		WHERE Articles.Category = ?
-		ORDER BY Date desc`, categoryId)
+	rows, err := Db.Query(`SELECT "articleid", "title", "slug", "date", "users"."username"
+		FROM "articles"
+		JOIN "users" on "users"."userid" = "articles"."author"
+		WHERE "articles"."category" = ?
+		ORDER BY "date" desc`, categoryID)
 
 	if err != nil {
 		log.Println(err)
@@ -64,20 +64,20 @@ func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
 
 	for rows.Next() {
 		var (
-			articleId int
+			articleID int
 			title     string
 			date      *time.Time
 			slug      string
 			author    string
 		)
 
-		if err := rows.Scan(&articleId, &title, &slug, &date, &author); err != nil {
+		if err := rows.Scan(&articleID, &title, &slug, &date, &author); err != nil {
 			continue
 		}
 
 		article := &SQLArticle{
 			Db:     Db,
-			ID:     articleId,
+			ID:     articleID,
 			Title:  title,
 			Slug:   slug,
 			Date:   date,
@@ -94,11 +94,11 @@ func ArticleListByCategory(categoryId int, Db *sql.DB) []*SQLArticle {
 func ArticleList(Db *sql.DB) []*SQLArticle {
 	var articles []*SQLArticle
 
-	rows, err := Db.Query(`SELECT ArticleId, Title, Slug, Date, Users.Username, Name, Body
-		FROM Articles
-		JOIN Category on Category.CategoryId = Articles.Category
-		JOIN Users on Users.UserId = Articles.Author
-		ORDER BY Date DESC`)
+	rows, err := Db.Query(`SELECT "articleid", "title", "slug", "date", "users"."username", "name", "body"
+		FROM "articles"
+		JOIN "category" on "category"."categoryId" = "articles"."category"
+		JOIN "users" on "users"."userid" = "articles"."author"
+		ORDER BY "date" DESC`)
 
 	if err != nil {
 		log.Println("Error querying for all articles", err)
@@ -108,7 +108,7 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 
 	for rows.Next() {
 		var (
-			articleId int
+			articleID int
 			title     string
 			date      *time.Time
 			slug      string
@@ -117,13 +117,13 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 			body      string
 		)
 
-		if err := rows.Scan(&articleId, &title, &slug, &date, &author, &category, &body); err != nil {
+		if err := rows.Scan(&articleID, &title, &slug, &date, &author, &category, &body); err != nil {
 			continue
 		}
 
 		article := &SQLArticle{
 			Db:       Db,
-			ID:       articleId,
+			ID:       articleID,
 			Title:    title,
 			Slug:     slug,
 			Body:     body,
@@ -144,7 +144,7 @@ func (p *SQLArticle) Exists() bool {
 		return true
 	}
 	var count int
-	err := p.Db.QueryRow(`SELECT COUNT(*) FROM Articles WHERE Slug = ?`, p.Slug).Scan(&count)
+	err := p.Db.QueryRow(`SELECT COUNT(*) FROM "articles" WHERE "slug" = ?`, p.Slug).Scan(&count)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false
@@ -174,11 +174,11 @@ func (p *SQLArticle) Populate() error {
 		category string
 	)
 
-	err := p.Db.QueryRow(`SELECT ArticleId, Title, Users.Username, Body, Date, Slug, Name
-	FROM Articles
-	JOIN Category ON Articles.Category = Category.CategoryID
-	JOIN Users ON Articles.Author = Users.UserId
-	WHERE Slug = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
+	err := p.Db.QueryRow(`SELECT "articleid", "title", "users"."username", "body", "date", "slug", "name"
+	FROM "articles"
+	JOIN "category" ON "articles"."category" = "category"."categoryid"
+	JOIN "users" ON "articles"."author" = "users"."userId"
+	WHERE "slug" = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
 		log.Println("Item does not exist", ErrDoesNotExist)
@@ -203,7 +203,7 @@ func (p *SQLArticle) Save() error {
 		return err
 	}
 	if !p.Exists() {
-		query = "INSERT INTO Articles (Title, Author, Body, Date, Slug, Category) VALUES (?, ?, ?, ?, ?, ?)"
+		query = `INSERT INTO "articles" ("title", "author", "body", "date", "slug", "category") VALUES (?, ?, ?, ?, ?, ?)`
 		result, err := p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
 		id, err := result.LastInsertId()
 		if err != nil {
@@ -211,7 +211,7 @@ func (p *SQLArticle) Save() error {
 		}
 		p.ID = int(id)
 	} else {
-		query = "UPDATE Articles SET Title = ?, Author = ?, Body = ?, Date = ?, Slug = ?, Category = ? WHERE ArticleId = ?"
+		query = `UPDATE "articles" SET "title" = ?, "author" = ?, "body" = ?, "date" = ?, "slug" = ?, "category" = ? WHERE "articleid" = ?`
 		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
 	}
 
@@ -231,7 +231,7 @@ func (p *SQLArticle) Delete() error {
 	if !p.Exists() {
 		return ErrDoesNotExist
 	}
-	query = "DELETE FROM Articles WHERE Slug = ?"
+	query = `DELETE FROM "articles" WHERE "slug" = ?`
 	_, err = p.Db.Exec(query, p.Slug)
 
 	if err != nil {

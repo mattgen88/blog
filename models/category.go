@@ -47,7 +47,7 @@ func NewSQLCategory(name string, db *sql.DB) *SQLCategory {
 func CategoryList(Db *sql.DB) []*SQLCategory {
 	var categories []*SQLCategory
 
-	rows, err := Db.Query(`SELECT CategoryId, Name from Category`)
+	rows, err := Db.Query(`SELECT "categoryid", "name" from "category"`)
 
 	if err != nil {
 		log.Println("Error querying for all categories", err)
@@ -57,18 +57,18 @@ func CategoryList(Db *sql.DB) []*SQLCategory {
 
 	for rows.Next() {
 		var (
-			categoryId int
+			categoryID int
 			name       string
 		)
 
-		if err := rows.Scan(&categoryId, &name); err != nil {
+		if err := rows.Scan(&categoryID, &name); err != nil {
 			log.Println(err)
 			continue
 		}
 
 		category := &SQLCategory{
 			Db:   Db,
-			ID:   categoryId,
+			ID:   categoryID,
 			Name: name,
 		}
 
@@ -85,8 +85,8 @@ func (c *SQLCategory) Exists() bool {
 	}
 	var count int
 	err := c.Db.QueryRow(`SELECT COUNT(*)
-	FROM Category
-	WHERE Name = ?`, c.Name).Scan(&count)
+	FROM "category"
+	WHERE "name" = ?`, c.Name).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -113,9 +113,9 @@ func (c *SQLCategory) Populate() error {
 	}
 
 	// Fetch data and populate
-	err := c.Db.QueryRow(`SELECT CategoryId
-	FROM Category
-	WHERE Name = ?`, c.Name).Scan(&c.ID)
+	err := c.Db.QueryRow(`SELECT "categoryid"
+	FROM "category"
+	WHERE "name" = ?`, c.Name).Scan(&c.ID)
 
 	if err != nil {
 		return errors.New("Unknown error occurred: " + fmt.Sprintf("%s", err))
@@ -137,11 +137,11 @@ func (c *SQLCategory) Save() error {
 	}
 	if !c.Exists() {
 		log.Println("Creating new category")
-		query = `INSERT INTO Category ("Name") VALUES (?)`
+		query = `INSERT INTO "category" ("name") VALUES (?)`
 		_, err = c.Db.Exec(query, c.Name)
 	} else {
 		log.Println("Overwriting existing category")
-		query = `UPDATE Category SET "Name" = ? WHERE "CategoryId" = ?`
+		query = `UPDATE "category" SET "name" = ? WHERE "categoryid" = ?`
 		_, err = c.Db.Exec(query, c.Name, c.ID)
 	}
 
