@@ -53,7 +53,7 @@ func ArticleListByCategory(categoryID int, Db *sql.DB) []*SQLArticle {
 	rows, err := Db.Query(`SELECT "articleid", "title", "slug", "date", "users"."username"
 		FROM "articles"
 		JOIN "users" on "users"."userid" = "articles"."author"
-		WHERE "articles"."category" = ?
+		WHERE "articles"."category" = $1
 		ORDER BY "date" desc`, categoryID)
 
 	if err != nil {
@@ -144,7 +144,7 @@ func (p *SQLArticle) Exists() bool {
 		return true
 	}
 	var count int
-	err := p.Db.QueryRow(`SELECT COUNT(*) FROM "articles" WHERE "slug" = ?`, p.Slug).Scan(&count)
+	err := p.Db.QueryRow(`SELECT COUNT(*) FROM "articles" WHERE "slug" = $1`, p.Slug).Scan(&count)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false
@@ -178,7 +178,7 @@ func (p *SQLArticle) Populate() error {
 	FROM "articles"
 	JOIN "category" ON "articles"."category" = "category"."categoryid"
 	JOIN "users" ON "articles"."author" = "users"."userId"
-	WHERE "slug" = ?`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
+	WHERE "slug" = $1`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {
 		log.Println("Item does not exist", ErrDoesNotExist)
@@ -203,7 +203,7 @@ func (p *SQLArticle) Save() error {
 		return err
 	}
 	if !p.Exists() {
-		query = `INSERT INTO "articles" ("title", "author", "body", "date", "slug", "category") VALUES (?, ?, ?, ?, ?, ?)`
+		query = `INSERT INTO "articles" ("title", "author", "body", "date", "slug", "category") VALUES ($1, $2, $3, $4, $5, $6)`
 		result, err := p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID)
 		id, err := result.LastInsertId()
 		if err != nil {
@@ -211,7 +211,7 @@ func (p *SQLArticle) Save() error {
 		}
 		p.ID = int(id)
 	} else {
-		query = `UPDATE "articles" SET "title" = ?, "author" = ?, "body" = ?, "date" = ?, "slug" = ?, "category" = ? WHERE "articleid" = ?`
+		query = `UPDATE "articles" SET "title" = $1, "author" = $2, "body" = $3, "date" = $4, "slug" = $5, "category" = $6 WHERE "articleid" = $7`
 		_, err = p.Db.Exec(query, p.Title, p.Author.ID, p.Body, p.Date, p.Slug, p.Category.ID, p.ID)
 	}
 
@@ -231,7 +231,7 @@ func (p *SQLArticle) Delete() error {
 	if !p.Exists() {
 		return ErrDoesNotExist
 	}
-	query = `DELETE FROM "articles" WHERE "slug" = ?`
+	query = `DELETE FROM "articles" WHERE "slug" = $1`
 	_, err = p.Db.Exec(query, p.Slug)
 
 	if err != nil {

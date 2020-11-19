@@ -84,7 +84,7 @@ func (u *SQLUser) Exists() bool {
 		return true
 	}
 	var count int
-	err := u.Db.QueryRow(`SELECT COUNT(*) FROM "users" WHERE "username" = ?`, u.Username).Scan(&count)
+	err := u.Db.QueryRow(`SELECT COUNT(*) FROM "users" WHERE "username" = $1`, u.Username).Scan(&count)
 
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,7 @@ func (u *SQLUser) Populate() error {
 	// Fetch data and populate
 	err := u.Db.QueryRow(`SELECT "userId", "created", "realname", "email", "role", "hash"
 	FROM "users"
-	WHERE "username" = ?`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
+	WHERE "username" = $1`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
 
 	if err != nil {
 		log.Println(err)
@@ -169,15 +169,15 @@ func (u *SQLUser) Save() error {
 			"created",
 			"role"
 		) VALUES (
-			?,
-			?,
-			?,
-			?,
+			$1,
+			$2,
+			$3,
+			$4,
 			CURRENT_TIMESTAMP,
 			(
 				SELECT "roleid"
 				FROM "role"
-				WHERE "name" = ?
+				WHERE "name" = $5
 			)
 		);`
 		result, err := u.Db.Exec(query, u.Username, u.pwhash, u.Realname, u.Email, "user")
@@ -192,7 +192,7 @@ func (u *SQLUser) Save() error {
 		}
 		u.ID = int(id)
 	} else {
-		query = `UPDATE "users" SET "hash" = ?, "realname" = ?, "email" = ?, "role" = ? WHERE "userid" = ?`
+		query = `UPDATE "users" SET "hash" = $1, "realname" = $2, "email" = $3, "role" = $4 WHERE "userid" = $5`
 		_, err = u.Db.Exec(query, u.pwhash, u.Realname, u.Email, u.Role, u.ID)
 	}
 

@@ -86,7 +86,7 @@ func (c *SQLCategory) Exists() bool {
 	var count int
 	err := c.Db.QueryRow(`SELECT COUNT(*)
 	FROM "category"
-	WHERE "name" = ?`, c.Name).Scan(&count)
+	WHERE "name" = $1`, c.Name).Scan(&count)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -115,7 +115,7 @@ func (c *SQLCategory) Populate() error {
 	// Fetch data and populate
 	err := c.Db.QueryRow(`SELECT "categoryid"
 	FROM "category"
-	WHERE "name" = ?`, c.Name).Scan(&c.ID)
+	WHERE "name" = $1`, c.Name).Scan(&c.ID)
 
 	if err != nil {
 		return errors.New("Unknown error occurred: " + fmt.Sprintf("%s", err))
@@ -137,11 +137,11 @@ func (c *SQLCategory) Save() error {
 	}
 	if !c.Exists() {
 		log.Println("Creating new category")
-		query = `INSERT INTO "category" ("name") VALUES (?)`
+		query = `INSERT INTO "category" ("name") VALUES ($1)`
 		_, err = c.Db.Exec(query, c.Name)
 	} else {
 		log.Println("Overwriting existing category")
-		query = `UPDATE "category" SET "name" = ? WHERE "categoryid" = ?`
+		query = `UPDATE "category" SET "name" = $1 WHERE "categoryid" = $2`
 		_, err = c.Db.Exec(query, c.Name, c.ID)
 	}
 
