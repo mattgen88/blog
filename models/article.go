@@ -96,7 +96,7 @@ func ArticleList(Db *sql.DB) []*SQLArticle {
 
 	rows, err := Db.Query(`SELECT "articleid", "title", "slug", "date", "users"."username", "name", "body"
 		FROM "articles"
-		JOIN "category" on "category"."categoryId" = "articles"."category"
+		JOIN "category" on "category"."categoryid" = "articles"."category"
 		JOIN "users" on "users"."userid" = "articles"."author"
 		ORDER BY "date" DESC`)
 
@@ -177,7 +177,7 @@ func (p *SQLArticle) Populate() error {
 	err := p.Db.QueryRow(`SELECT "articleid", "title", "users"."username", "body", "date", "slug", "name"
 	FROM "articles"
 	JOIN "category" ON "articles"."category" = "category"."categoryid"
-	JOIN "users" ON "articles"."author" = "users"."userId"
+	JOIN "users" ON "articles"."author" = "users"."userid"
 	WHERE "slug" = $1`, p.Slug).Scan(&p.ID, &p.Title, &author, &p.Body, &p.Date, &p.Slug, &category)
 
 	if err != nil {

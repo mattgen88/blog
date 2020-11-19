@@ -138,7 +138,7 @@ func (u *SQLUser) Populate() error {
 	}
 
 	// Fetch data and populate
-	err := u.Db.QueryRow(`SELECT "userId", "created", "realname", "email", "role", "hash"
+	err := u.Db.QueryRow(`SELECT "userid", "created", "realname", "email", "role", "hash"
 	FROM "users"
 	WHERE "username" = $1`, u.Username).Scan(&u.ID, &u.Created, &u.Realname, &u.Email, &u.Role, &u.pwhash)
 
