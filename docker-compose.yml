@@ -1,26 +1,30 @@
+version: "3.1"
+
 services:
   db:
     image: postgres:alpine
     restart: always
     environment:
-    - POSTGRES_PASSWORD
-    - POSTGRES_USER=blogrw
-    - POSTGRES_DB=blog
+      - POSTGRES_PASSWORD
+      - POSTGRES_USER=blogrw
+      - POSTGRES_DB=blog
     ports:
-    - "5432:5432"
+      - "5432:5432"
+    volumes:
+      - "./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d"
   blog:
     container_name: blog
     ports:
-    - '7000:7000'
+      - "7000:7000"
     environment:
-    - DSN
-    - PORT=7000
-    - HOST=0.0.0.0
+      - DSN
+      - PORT=7000
+      - HOST=0.0.0.0
     env_file:
-    - '.env'
-    volumes:
-    - './blog-data.sqlite:/blog-data.sqlite'
+      - ".env"
     restart: unless-stopped
+    depends_on:
+      - "db"
     build:
       context: .
       dockerfile: Dockerfile
