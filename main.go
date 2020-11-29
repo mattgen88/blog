@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 
@@ -25,9 +25,11 @@ func main() {
 	viper.BindEnv("dsn")
 	dsn := viper.GetString("dsn")
 
-	viper.SetDefault("port", 8088)
-	port := viper.GetInt("port")
+	viper.BindEnv("port")
+	viper.SetDefault("port", "8088")
+	port := viper.GetString("port")
 
+	viper.BindEnv("host")
 	viper.SetDefault("host", "127.0.0.1")
 	host := viper.GetString("host")
 	log.Println("Starting on ", host, " port ", port, " dsn ", dsn)
@@ -65,5 +67,5 @@ func main() {
 
 	r.NotFoundHandler = http.HandlerFunc(handlers.ErrorHandler)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), util.ContentType(Gorilla.LoggingHandler(os.Stdout, r), "application/hal+json")))
+	log.Fatal(http.ListenAndServe(net.JoinHostPort(host, port), util.ContentType(Gorilla.LoggingHandler(os.Stdout, Gorilla.CORS()(r)), "application/hal+json")))
 }
